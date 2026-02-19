@@ -19,7 +19,7 @@ export const displayRazorpay = async (orderData, user, navigate) => {
     toast.error("Razorpay failed to load !");
     return;
   }
-  console.log("RAZORPAY KEY CHECK:", import.meta.env.VITE_RAZORPAY_KEY_ID);
+
   const options = {
     key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Frontend Key ID 
     amount: orderData.razorpayOrder.amount,

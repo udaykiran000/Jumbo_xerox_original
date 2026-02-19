@@ -7,7 +7,7 @@ export const fetchConfig = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await api.get("/config");
-      console.log("[REDUX] Config Loaded:", data);
+
       return data;
     } catch (error) {
       console.error("[REDUX] Config Fetch Failed:", error);

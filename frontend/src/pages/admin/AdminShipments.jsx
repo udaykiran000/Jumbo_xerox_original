@@ -48,7 +48,7 @@ export default function AdminShipments() {
   }, []);
 
   const fetchShipmentOrders = async () => {
-    console.log("[DEBUG-SHIP] Fetching shipment ready orders...");
+
     try {
       const { data } = await api.get("/admin/orders");
       // Filter orders that are either Paid or marked for Delivery
@@ -311,7 +311,7 @@ export default function AdminShipments() {
                   <button
                     onClick={async () => {
                       try {
-                        console.log("Sending Create Request...");
+                        // console.log("Sending Create Request...");
                         const { data } = await api.post("/admin/shipment/create", {
                           orderId: selectedShipment._id,
                         });

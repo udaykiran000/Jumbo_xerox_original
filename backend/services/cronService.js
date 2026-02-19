@@ -27,7 +27,7 @@ const performCleanup = async () => {
         // If the upload folder hasn't been modified in 2.5 hours, it's abandoned.
         if (now - stats.mtimeMs > 2.5 * 60 * 60 * 1000) {
           await fs.rm(p, { recursive: true, force: true });
-          console.log(`🗑️ [TEMP-PURGE] Removed abandoned upload & .tmp files: ${folder}`);
+
         }
       }
     }
@@ -47,7 +47,7 @@ const performCleanup = async () => {
         const filePath = path.join(FILES_BASE, path.basename(file.url));
         if (fsSync.existsSync(filePath)) {
           await fs.unlink(filePath);
-          console.log(`🗑️ [FILE] Unpaid asset deleted: ${path.basename(file.url)}`);
+
         }
       }
       order.filesDeleted = true;
@@ -69,7 +69,7 @@ const performCleanup = async () => {
         const filePath = path.join(FILES_BASE, path.basename(file.url));
         if (fsSync.existsSync(filePath)) {
           await fs.unlink(filePath);
-          console.log(`🗑️ [FILE] Completed asset deleted: ${path.basename(file.url)}`);
+
         }
       }
       order.filesDeleted = true;

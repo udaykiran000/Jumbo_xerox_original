@@ -81,12 +81,12 @@ export const useFileUpload = () => {
       fd.append("chunkIndex", idx);
       fd.append("chunk", chunk);
 
-      console.log(`[UPLOAD-CLIENT] Sending Chunk ${idx} (Size: ${size} bytes)`);
+
 
       const t0 = performance.now();
       try {
         await api.post("/upload/chunk", fd);
-        console.log(`[UPLOAD-CLIENT] Chunk ${idx} Success`);
+
         const duration = (performance.now() - t0) / 1000;
 
         // Adaptive scaling

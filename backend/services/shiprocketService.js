@@ -4,7 +4,7 @@ let token = null;
 
 const authenticate = async () => {
   if (process.env.SHIPROCKET_TEST_MODE === "true") {
-    console.log("[SHIPROCKET-TEST] Skipping Authentication");
+// Shiprocket service optimized for production
     return "TEST_TOKEN";
   }
 
@@ -19,11 +19,9 @@ const authenticate = async () => {
     token = response.data.token;
     return token;
   } catch (error) {
-    console.error(
-      "Shiprocket Auth Error:",
-      error.response?.data || error.message
-    );
-    throw new Error("Shiprocket Authentication Failed");
+    const authError = error.response?.data?.message || JSON.stringify(error.response?.data) || error.message;
+    console.error("Shiprocket Auth Error:", authError);
+    throw new Error(`Shiprocket Auth Failed: ${authError}`);
   }
 };
 
@@ -39,22 +37,40 @@ const createOrder = async (order) => {
   if (!token) await authenticate();
 
   // Map your Order model to Shiprocket structure
-  // This is a minimal example; you may need to map more fields
+  // Utility to Title Case
+  const toTitleCase = (str) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  
+  // Map common short names
+  let city = order.shippingAddress.city.trim();
+  if (city.toLowerCase() === "hyd") city = "Hyderabad";
+  if (city.toLowerCase() === "secunderabad") city = "Secunderabad";
+
   const orderData = {
     order_id: order._id,
     order_date: new Date(order.createdAt).toISOString().split("T")[0],
-    pickup_location: "Primary", // You need to set this in Shiprocket Panel
-    billing_customer_name: order.user.name,
+    pickup_location: "Primary", // Try standard name 'Primary'
+    // pickup_location_id: 20225035, // Legacy field? 
+    billing_customer_name: toTitleCase(order.user.name),
     billing_last_name: "",
-    billing_address: order.shippingAddress.street,
+    billing_address: toTitleCase(order.shippingAddress.street),
     billing_address_2: "",
-    billing_city: order.shippingAddress.city,
+    billing_city: toTitleCase(city),
     billing_pincode: order.shippingAddress.pincode,
-    billing_state: "Maharashtra", // Needs to be dynamic or fixed based on your region
+    billing_state: toTitleCase(order.shippingAddress.state), 
     billing_country: "India",
-    billing_email: "customer@example.com", // Add email to your User model if needed
-    billing_phone: order.user.phone,
+    billing_email: order.user?.email || "info@jumboxerox.com",
+    billing_phone: order.user.phone.replace(/\D/g, '').slice(-10),
     shipping_is_billing: true,
+    shipping_customer_name: toTitleCase(order.user.name),
+    shipping_last_name: "",
+    shipping_address: toTitleCase(order.shippingAddress.street),
+    shipping_address_2: "",
+    shipping_city: toTitleCase(city),
+    shipping_pincode: order.shippingAddress.pincode,
+    shipping_country: "India",
+    shipping_state: toTitleCase(order.shippingAddress.state),
+    shipping_email: order.user?.email || "info@jumboxerox.com",
+    shipping_phone: order.user.phone.replace(/\D/g, '').slice(-10),
     order_items: [
       {
         name: "Print Service",
@@ -71,6 +87,8 @@ const createOrder = async (order) => {
     weight: 0.5,
   };
 
+  console.log("[DEBUG] Shiprocket Order Payload:", JSON.stringify(orderData, null, 2));
+
   try {
     const response = await axios.post(
       "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc",
@@ -85,11 +103,9 @@ const createOrder = async (order) => {
       await authenticate(); // Retry once
       return createOrder(order);
     }
-    console.error(
-      "Shiprocket Order Error:",
-      error.response?.data || error.message
-    );
-    throw new Error("Shiprocket Order Creation Failed");
+    const errorMessage = error.response?.data?.message || JSON.stringify(error.response?.data) || error.message;
+    console.error("Shiprocket Order Error:", errorMessage);
+    throw new Error(`Shiprocket Error: ${errorMessage}`);
   }
 };
 

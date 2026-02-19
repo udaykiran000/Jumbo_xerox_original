@@ -129,7 +129,7 @@ const Checkout = () => {
     const targetPhone =
       deliveryMode === "Pickup" ? pickupDetails.phone : localPhone;
 
-    console.log("[DEBUG-VALIDATION] Validating phone:", targetPhone);
+
 
     if (!targetPhone || targetPhone.length < 10) {
       setIsPhoneError(true);
@@ -142,7 +142,7 @@ const Checkout = () => {
       deliveryMode === "Delivery" ||
       (deliveryMode === "Pickup" && targetPhone === localPhone)
     ) {
-      console.log("[DEBUG-FLOW] Bypassing OTP: Profile phone detected.");
+
       await proceedToOrderCreation();
       return;
     }
@@ -159,7 +159,7 @@ const Checkout = () => {
         toast.success(`DEV MODE: OTP Auto-filled: ${data.otp}`, {
           duration: 6000,
         });
-        console.log("DEV OTP:", data.otp);
+        // console.log("DEV OTP:", data.otp);
         setOtpValue(data.otp); // Auto-fill
       } else {
         toast.success("Verification code sent!");

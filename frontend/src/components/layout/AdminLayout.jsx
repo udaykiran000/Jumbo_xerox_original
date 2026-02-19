@@ -38,15 +38,15 @@ const AdminLayout = () => {
   const notifications = useSelector(selectNotifications);
   const viewMode = useSelector(selectViewMode);
 
-  // Handle View Mode Switching
+  // Handle View Mode Switching - Removed reactive useEffect to avoid race conditions
+  // We now navigate immediately in the handler
   useEffect(() => {
-    if (viewMode === 'user') {
-        navigate("/");
-    }
+    // Kept empty or removed if no other logic needed
   }, [viewMode, navigate]);
 
   const handleToggleView = () => {
       dispatch(setViewMode('user'));
+      navigate("/");
   };
 
   // Debugging route logs

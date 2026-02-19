@@ -24,7 +24,7 @@ export default function AdminPayments() {
   }, []);
 
   const fetchPayments = async () => {
-    console.log("[DEBUG-PAY] Fetching paid transactions...");
+
     try {
       const { data } = await api.get("/admin/orders");
       // Filter only "Paid" orders

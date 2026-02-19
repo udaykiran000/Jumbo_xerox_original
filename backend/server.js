@@ -17,7 +17,7 @@ app.use(express.urlencoded({ limit: "500mb", extended: true }));
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.log("❌ DB Error:", err));
+  .catch((err) => console.error("❌ DB Error:", err));
 
 startCronJobs();
 
@@ -71,5 +71,4 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`[DEBUG] Server restarted at ${new Date().toISOString()} (Log Check)`);
 });

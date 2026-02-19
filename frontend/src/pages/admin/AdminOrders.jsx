@@ -181,8 +181,8 @@ const AdminOrders = () => {
 
   const filteredOrders = orders.filter(
     (o) =>
-      o.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.user?.phone?.includes(searchTerm) ||
+      (o.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (o.user?.phone || "").includes(searchTerm) ||
       o._id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
@@ -247,12 +247,7 @@ const AdminOrders = () => {
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
-            <motion.tbody 
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="divide-y divide-gray-200"
-            >
+            <tbody className="divide-y divide-gray-200">
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-slate-500 text-sm">
@@ -271,9 +266,8 @@ const AdminOrders = () => {
                     o.deliveryMode === "Delivery";
 
                   return (
-                    <motion.tr
+                    <tr
                       key={o._id}
-                      variants={slideInUp}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
@@ -360,11 +354,11 @@ const AdminOrders = () => {
                           )}
                         </div>
                       </td>
-                    </motion.tr>
+                    </tr>
                   );
                 })
               )}
-            </motion.tbody>
+            </tbody>
           </table>
         </div>
       </div>

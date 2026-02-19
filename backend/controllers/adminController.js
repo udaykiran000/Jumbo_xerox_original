@@ -198,9 +198,16 @@ exports.toggleUserStatus = async (req, res) => {
 // 3. ORDER MANAGEMENT: Upgraded Filtering & Security
 exports.getAllOrders = async (req, res) => {
   try {
+    console.log("[DEBUG] Fetching All Orders...");
+    const allOrdersCount = await Order.countDocuments({});
+    console.log(`[DEBUG] Total Orders in DB: ${allOrdersCount}`);
+
     const orders = await Order.find({ paymentStatus: "Paid" })
       .populate("user", "name email phone")
       .sort({ createdAt: -1 });
+
+    console.log(`[DEBUG] Paid Orders Found: ${orders.length}`);
+
     res.json({ orders });
   } catch (error) {
     res.status(500).json({ message: "Cloud sync failed" });
@@ -432,12 +439,17 @@ exports.createShipment = async (req, res) => {
 
     // 1. Create Order in Shiprocket (or Mock)
     const shiprocketOrder = await createOrder(order);
+    console.log("[DEBUG] Shiprocket Create Response:", JSON.stringify(shiprocketOrder, null, 2));
     
     // 2. Generate AWB (or Mock)
     // Note: In real Shiprocket flow, you might need to select a courier first.
     // For 'adhoc', it often assigns automatically or returns a shipment_id to assign later.
     // We assume createOrder returns a shipment_id we can use.
-    const shipmentId = shiprocketOrder.shipment_id || shiprocketOrder.payload?.shipment_id;
+    const shipmentId = shiprocketOrder.shipment_id || shiprocketOrder.payload?.shipment_id || shiprocketOrder.response?.data?.shipment_id;
+    
+    if (!shipmentId) {
+        throw new Error(`Failed to extract Shipment ID from response. Response: ${JSON.stringify(shiprocketOrder)}`);
+    }
     
     const awbData = await generateAWB(shipmentId);
 

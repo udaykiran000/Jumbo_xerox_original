@@ -42,7 +42,7 @@ export default function AdminSettings() {
   // --- 1. ACTION: UPDATE ADMIN PROFILE ---
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    console.log("[DEBUG-UI] Starting Admin Profile update...");
+
     setLoadingProfile(true);
     try {
       await api.put("/admin/profile/update", profileData);
@@ -62,7 +62,7 @@ export default function AdminSettings() {
       return toast.error("New passwords do not match!");
     }
 
-    console.log("[DEBUG-UI] Starting password update...");
+
     setLoadingPass(true);
     try {
       await api.post("/admin/settings/change-password", passData);

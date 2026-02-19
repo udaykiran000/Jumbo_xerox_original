@@ -24,7 +24,7 @@ export default function AdminContactMessages() {
   }, []);
 
   const fetchMessages = async () => {
-    console.log("[DEBUG-MSG] Fetching contact enquiries...");
+
     try {
       const { data } = await api.get("/admin/messages");
       setMessages(data);
