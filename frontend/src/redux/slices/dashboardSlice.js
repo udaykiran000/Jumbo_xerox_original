@@ -6,7 +6,7 @@ export const fetchDashboardStats = createAsyncThunk(
   'dashboard/fetchStats',
   async (_, { rejectWithValue }) => {
     try {
-      console.log("[REDUX] Fetching Dashboard Stats...");
+
       const { data } = await api.get('/admin/stats');
       return data;
     } catch (error) {

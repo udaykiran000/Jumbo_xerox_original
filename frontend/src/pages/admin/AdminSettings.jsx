@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { fadeInUp, slideInLeft, slideInRight } from "../../components/common/Animations";
 
 import { useSelector } from "react-redux";
 import { selectUser } from "../../redux/slices/authSlice";
@@ -82,14 +83,19 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 font-sans pb-20 text-slate-800">
-      {/* HEADER SECTION (Clean Professional Design) */}
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={fadeInUp}
+      className="max-w-6xl mx-auto space-y-6 font-sans pb-20 text-slate-800"
+    >
+      {/* HEADER SECTION */}
       <div className="flex items-center gap-4 mb-2">
         <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
           <Settings size={28} />
         </div>
         <div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">
             System Settings
           </p>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -99,14 +105,17 @@ export default function AdminSettings() {
       </div>
 
       {/* 1. PROFILE SECTION */}
-      <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-5">
+      <motion.div 
+        variants={slideInLeft}
+        className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm"
+      >
+        <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-5">
           <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
             <User size={18} />
           </div>
           <div>
             <h3 className="font-bold text-lg text-slate-900">Admin Profile</h3>
-            <p className="text-xs font-medium text-slate-500">
+            <p className="text-sm font-medium text-slate-500">
               Update your basic account information and email address
             </p>
           </div>
@@ -123,7 +132,7 @@ export default function AdminSettings() {
             <input
               required
               type="text"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
               value={profileData.name}
               onChange={(e) =>
                 setProfileData({ ...profileData, name: e.target.value })
@@ -138,7 +147,7 @@ export default function AdminSettings() {
             <input
               required
               type="email"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
               value={profileData.email}
               onChange={(e) =>
                 setProfileData({ ...profileData, email: e.target.value })
@@ -150,7 +159,7 @@ export default function AdminSettings() {
             <button
               disabled={loadingProfile}
               type="submit"
-              className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-md shadow-slate-200"
+              className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
             >
               {loadingProfile ? (
                 <Loader2 className="animate-spin" size={16} />
@@ -161,11 +170,14 @@ export default function AdminSettings() {
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* 2. PASSWORD UPDATE FORM */}
-        <div className="lg:col-span-8 bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+        <motion.div 
+          variants={slideInLeft}
+          className="lg:col-span-8 bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm"
+        >
           <div className="flex items-center gap-3 mb-8">
             <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
               <Key size={20} />
@@ -184,7 +196,7 @@ export default function AdminSettings() {
                 required
                 type="password"
                 placeholder="Enter current password to verify"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
                 value={passData.currentPassword}
                 onChange={(e) =>
                   setPassData({ ...passData, currentPassword: e.target.value })
@@ -201,7 +213,7 @@ export default function AdminSettings() {
                   required
                   type="password"
                   placeholder="Minimum 6 characters"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
                   value={passData.newPassword}
                   onChange={(e) =>
                     setPassData({ ...passData, newPassword: e.target.value })
@@ -216,7 +228,7 @@ export default function AdminSettings() {
                   required
                   type="password"
                   placeholder="Re-type new password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
                   value={passData.confirmPassword}
                   onChange={(e) =>
                     setPassData({
@@ -231,25 +243,28 @@ export default function AdminSettings() {
             <button
               disabled={loadingPass}
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-3 shadow-lg shadow-blue-100 transition-all active:scale-95"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
             >
               {loadingPass ? (
-                <Loader2 className="animate-spin" size={20} />
+                <Loader2 className="animate-spin" size={18} />
               ) : (
-                <ShieldCheck size={20} />
+                <ShieldCheck size={18} />
               )}
               Update Password
             </button>
           </form>
-        </div>
+        </motion.div>
 
         {/* 3. SECURITY TIPS SECTION */}
-        <div className="lg:col-span-4 bg-slate-900 p-8 rounded-2xl text-white space-y-10 relative overflow-hidden h-fit shadow-xl">
+        <motion.div 
+          variants={slideInRight}
+          className="lg:col-span-4 bg-slate-900 p-8 rounded-xl text-white space-y-8 relative overflow-hidden h-fit shadow-md"
+        >
           <div className="relative z-10 text-left">
-            <div className="bg-blue-500/20 text-blue-400 w-fit p-3 rounded-xl mb-6 border border-blue-500/20">
+            <div className="bg-blue-500/20 text-blue-400 w-fit p-3 rounded-lg mb-6 border border-blue-500/20">
               <ShieldCheck size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-3 tracking-tight">
+            <h3 className="text-lg font-bold mb-3 tracking-tight">
               Security Guidelines
             </h3>
             <p className="text-xs text-slate-400 font-medium leading-relaxed mb-8">
@@ -291,15 +306,15 @@ export default function AdminSettings() {
               ))}
             </ul>
 
-            <div className="mt-12 pt-6 border-t border-white/5 flex items-center gap-2 opacity-40">
+            <div className="mt-10 pt-6 border-t border-white/5 flex items-center gap-2 opacity-50">
               <ShieldAlert size={14} />
               <p className="text-[10px] font-bold uppercase tracking-wider">
                 Account Protection Active
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

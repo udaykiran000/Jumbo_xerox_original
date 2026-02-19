@@ -13,6 +13,11 @@ import Home from "./pages/static/Home";
 import About from "./pages/static/About";
 import Services from "./pages/static/Services";
 import Contact from "./pages/static/Contact";
+import FAQ from "./pages/static/FAQ";
+import Privacy from "./pages/static/Privacy";
+import Refund from "./pages/static/Refund";
+import Terms from "./pages/static/Terms";
+import PaymentTerms from "./pages/static/PaymentTerms";
 
 // User Pages
 import QuickPrint from "./pages/user/QuickPrint";
@@ -40,6 +45,8 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { checkAuth } from "./redux/slices/authSlice";
 import { fetchConfig } from "./redux/slices/configSlice";
+import ScrollToTop from "./components/common/ScrollToTop";
+import CustomCursor from "./components/common/CustomCursor";
 
 function App() {
   const dispatch = useDispatch();
@@ -49,7 +56,12 @@ function App() {
     dispatch(fetchConfig());
   }, [dispatch]);
 
+
+
   return (
+    <>
+      {/* <CustomCursor /> */}
+      <ScrollToTop />
       <Routes>
       {/* 1. Public Routes */}
       <Route element={<MainLayout />}>
@@ -57,6 +69,11 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/privacy-policy" element={<Privacy />} />
+        <Route path="/refund-policy" element={<Refund />} />
+        <Route path="/terms-and-conditions" element={<Terms />} />
+        <Route path="/payment-terms" element={<PaymentTerms />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -100,6 +117,7 @@ function App() {
         }
       />
       </Routes>
+    </>
   );
 }
 

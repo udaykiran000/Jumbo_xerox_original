@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
-import { motion } from "framer-motion";
 import {
   Users,
-  UserPlus,
   Search,
   Trash2,
-  ShieldAlert,
   CheckCircle2,
   XCircle,
   Loader2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { fadeInUp, staggerContainer, slideInUp, scaleIn } from "../../components/common/Animations";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -74,25 +73,29 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={fadeInUp}
+      className="space-y-6 font-sans"
+    >
       {/* RESPONSIVE HEADER & FORM */}
-      <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 md:p-4 bg-blue-50 text-blue-600 rounded-xl md:rounded-2xl">
-            <Users size={28} />
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Directory
-            </p>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              Customers
-            </h1>
-          </div>
+      <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
+        <div>
+           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+             Customer Directory
+           </h1>
+           <p className="text-sm text-slate-500 mt-1">
+             Manage customer accounts and access levels.
+           </p>
         </div>
 
-        {/* ADD USER CARD (Single col on mobile) */}
-        <div className="w-full lg:w-auto bg-white p-5 md:p-6 rounded-3xl border border-gray-200 shadow-sm flex-1 max-w-2xl">
+        {/* ADD USER CARD */}
+        <motion.div 
+          variants={scaleIn}
+          className="w-full lg:w-auto bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex-1 max-w-3xl"
+        >
+          <h3 className="text-sm font-semibold text-slate-800 mb-3 block lg:hidden">Add New Customer</h3>
           <form
             onSubmit={handleAddUser}
             className="grid grid-cols-1 md:grid-cols-4 gap-3"
@@ -100,16 +103,16 @@ export default function AdminUsers() {
             <input
               required
               type="text"
-              placeholder="Name"
-              className="bg-gray-50 border-gray-200 rounded-lg p-3 text-sm font-medium w-full focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Full Name"
+              className="bg-white border border-gray-300 rounded-lg p-2.5 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
               value={newUser.name}
               onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
             />
             <input
               required
               type="email"
-              placeholder="Email"
-              className="bg-gray-50 border-gray-200 rounded-lg p-3 text-sm font-medium w-full focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Email Address"
+              className="bg-white border border-gray-300 rounded-lg p-2.5 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
               value={newUser.email}
               onChange={(e) =>
                 setNewUser({ ...newUser, email: e.target.value })
@@ -119,7 +122,7 @@ export default function AdminUsers() {
               required
               type="password"
               placeholder="Password"
-              className="bg-gray-50 border-gray-200 rounded-lg p-3 text-sm font-medium w-full focus:ring-2 focus:ring-blue-500 outline-none"
+              className="bg-white border border-gray-300 rounded-lg p-2.5 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
               value={newUser.password}
               onChange={(e) =>
                 setNewUser({ ...newUser, password: e.target.value })
@@ -128,74 +131,84 @@ export default function AdminUsers() {
             <button
               disabled={isSubmitting}
               type="submit"
-              className="bg-blue-600 text-white rounded-lg text-xs font-bold py-3 px-6 flex items-center justify-center gap-2 hover:bg-blue-700 shadow-sm transition-all"
+              className="bg-blue-600 text-white rounded-lg text-sm font-semibold py-2.5 px-4 flex items-center justify-center gap-2 hover:bg-blue-700 shadow-sm transition-all"
             >
               {isSubmitting ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
-                "Add Customer"
+                "Create Account"
               )}
             </button>
           </form>
-        </div>
+        </motion.div>
       </div>
 
-      {/* SEARCH BAR (Mobile full width) */}
-      <div className="relative w-full">
+      {/* SEARCH BAR */}
+      <div className="relative w-full max-w-md">
         <Search
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          size={18}
         />
         <input
           type="text"
-              placeholder="Search customers..."
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="Search customers..."
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       {/* SCROLLABLE USER TABLE */}
-      <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto custom-scrollbar">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[700px]">
             <thead>
-              <tr className="bg-slate-50 border-b border-gray-100 text-xs font-semibold uppercase text-slate-500 tracking-wide">
-                <th className="p-6">User Info</th>
-                <th className="p-6">Status</th>
-                <th className="p-6 text-center">Actions</th>
+              <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3">User Info</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <motion.tbody 
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="divide-y divide-gray-200 text-sm text-slate-700"
+            >
               {loading ? (
                 <tr>
                   <td
                     colSpan="3"
-                    className="p-20 text-center text-slate-400 font-bold italic"
+                    className="p-12 text-center text-slate-500"
                   >
-                    Loading list...
+                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-blue-600"/>
+                    Loading directory...
                   </td>
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr
+                  <motion.tr
                     key={u._id}
-                    className="hover:bg-blue-50/30 transition-colors"
+                    variants={slideInUp}
+                    className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="p-5">
-                      <p className="text-sm font-black text-slate-800">
-                        {u.name}
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-400">
-                        {u.email}
-                      </p>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase">
+                            {u.name.charAt(0)}
+                         </div>
+                         <div>
+                            <p className="font-semibold text-slate-900">{u.name}</p>
+                            <p className="text-xs text-slate-500">{u.email}</p>
+                         </div>
+                      </div>
                     </td>
-                    <td className="p-5">
+                    <td className="px-6 py-4">
                       <span
-                        className={`flex items-center gap-1.5 text-[9px] font-black uppercase px-3 py-1 rounded-full w-fit ${
+                        className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full ${
                           u.isActive
-                            ? "bg-emerald-100 text-emerald-600"
-                            : "bg-red-100 text-red-600"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                            : "bg-red-50 text-red-700 border border-red-100"
                         }`}
                       >
                         {u.isActive ? (
@@ -206,49 +219,49 @@ export default function AdminUsers() {
                         {u.isActive ? "Active" : "Disabled"}
                       </span>
                     </td>
-                    <td className="p-5">
+                    <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleToggleStatus(u._id)}
-                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-[9px] font-black uppercase"
+                          className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 rounded-md text-xs font-medium text-slate-600 transition-colors"
                         >
-                          Toggle
+                          {u.isActive ? "Disable" : "Enable"}
                         </button>
-                        <button className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                        <button className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors">
                           <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
 
-        {/* PAGINATION (Responsive Stack) */}
-        <div className="p-6 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/30">
-          <p className="text-[10px] font-bold text-gray-400 uppercase">
-            Page {currentPage} of {totalPages}
+        {/* PAGINATION */}
+        <div className="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50">
+          <p className="text-xs text-slate-500 font-medium">
+            Page <span className="font-bold text-slate-900">{currentPage}</span> of {totalPages}
           </p>
           <div className="flex gap-2">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-2 bg-white border border-gray-200 rounded-xl"
+              className="p-1.5 bg-white border border-gray-300 rounded-md text-slate-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </button>
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-2 bg-white border border-gray-200 rounded-xl"
+              className="p-1.5 bg-white border border-gray-300 rounded-md text-slate-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -23,4 +23,9 @@ router.post("/register-verify", registerVerify);
 // Logic: Traditional email/password authentication
 router.post("/login", login);
 
+// 4. OTP Login (Request & Verify)
+const { loginOTPRequest, loginOTPVerify } = require("../controllers/authController");
+router.post("/login-otp-request", loginOTPRequest);
+router.post("/login-otp-verify", loginOTPVerify);
+
 module.exports = router;

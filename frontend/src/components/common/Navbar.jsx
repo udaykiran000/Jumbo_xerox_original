@@ -13,13 +13,24 @@ import {
   Settings,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectUser, logout } from "../../redux/slices/authSlice";
+import { selectUser, logout, selectViewMode, toggleViewMode } from "../../redux/slices/authSlice";
+import { motion } from "framer-motion";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
+  const viewMode = useSelector(selectViewMode);
   const navigate = useNavigate();
+
+  const handleToggleView = () => {
+    dispatch(toggleViewMode());
+    // If switching TO admin, go to admin dashboard
+    if (viewMode === "user") {
+        navigate("/admin");
+    }
+    // If switching TO user, we remain on the current public page (or go home if we were on an admin page, but Navbar is only on public pages)
+  };
 
   const handleLogout = () => {
     console.log("[DEBUG-AUTH] User Logging out from Navbar...");
@@ -28,12 +39,38 @@ export default function Navbar() {
     navigate("/");
   };
 
+  /* navLinkClass logic fix: remove duplicate ternary */
   const navLinkClass = ({ isActive }) =>
     `relative px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
       isActive
         ? "text-blue-600 bg-blue-50 shadow-inner"
         : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
     }`;
+
+  // Animation Variants
+  const navContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2,
+        },
+    },
+  };
+
+  const navItemDrop = {
+    hidden: { y: -20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+        },
+    },
+  };
 
   return (
     <nav className="sticky top-0 w-full z-[50] bg-white/90 backdrop-blur-xl border-b border-slate-100 py-3 font-sans">
@@ -44,32 +81,32 @@ export default function Navbar() {
             <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform duration-300">
               <Printer size={24} />
             </div>
-            <span className="text-xl font-black text-slate-800 tracking-tighter uppercase">
+            <span className="text-lg md:text-xl font-black text-slate-800 tracking-tighter uppercase">
               Jumbo<span className="text-blue-600">Xerox</span>
             </span>
           </Link>
 
           {/* Desktop Navigation (Center) */}
-          <div className="hidden md:flex items-center space-x-1">
-            <NavLink to="/" className={navLinkClass}>
-              Home
-            </NavLink>
-            <NavLink to="/services" className={navLinkClass}>
-              Services
-            </NavLink>
-
-            <NavLink to="/about" className={navLinkClass}>
-              <Info size={16} className="text-slate-400" /> About
-            </NavLink>
-            <NavLink to="/contact" className={navLinkClass}>
-              <Phone size={16} className="text-slate-400" /> Contact
-            </NavLink>
-
-            <NavLink to="/quick-print" className={navLinkClass}>
-              <Zap size={16} className="text-orange-500 fill-orange-500" />
-              Quick Print
-            </NavLink>
-          </div>
+          <motion.div 
+            className="hidden md:flex items-center space-x-1"
+            variants={navContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { to: "/", label: "Home", icon: null, end: true },
+              { to: "/services", label: "Services", icon: null },
+              { to: "/about", label: "About", icon: <Info size={16} className="text-slate-400" /> },
+              { to: "/contact", label: "Contact", icon: <Phone size={16} className="text-slate-400" /> },
+              { to: "/quick-print", label: "Quick Print", icon: <Zap size={16} className="text-orange-500 fill-orange-500" /> },
+            ].map((item, idx) => (
+              <motion.div key={idx} variants={navItemDrop}>
+                <NavLink to={item.to} end={item.end} className={navLinkClass}>
+                  {item.icon} {item.label}
+                </NavLink>
+              </motion.div>
+            ))}
+          </motion.div>
 
           {/* Auth/User Action Section */}
           <div className="hidden md:flex items-center gap-4">
@@ -92,14 +129,25 @@ export default function Navbar() {
                   </span>
                 </Link>
 
-                {/* Admin Quick Link */}
+                {/* Admin Quick Link & Toggle */}
                 {user.role === "admin" && (
-                  <Link
-                    to="/admin"
-                    className="p-2.5 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-all"
-                  >
-                    <LayoutDashboard size={20} />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {/* 1. Dashboard Link - Only visible in Admin Mode (REMOVED as per user request) */}
+
+
+                    {/* 2. View Toggle Button (Icon Only) */}
+                    <button
+                      onClick={handleToggleView}
+                      className={`p-2.5 rounded-xl transition-all flex items-center justify-center border ${
+                        viewMode === "admin" 
+                          ? "text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900" 
+                          : "text-blue-600 border-blue-100 bg-blue-50 hover:bg-blue-100" 
+                      }`}
+                      title={viewMode === 'admin' ? "Switch to User View" : "Switch to Admin View"}
+                    >
+                      {viewMode === 'admin' ? <User size={20} /> : <LayoutDashboard size={20} />}
+                    </button>
+                  </div>
                 )}
 
                 <button

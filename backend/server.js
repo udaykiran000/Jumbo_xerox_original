@@ -41,6 +41,7 @@ app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/config", require("./routes/configRoutes"));
+app.use("/api/settings", require("./routes/settingRoutes"));
 
 // 6. Catch-all Middleware (EXPRESS 5 FIX)
 

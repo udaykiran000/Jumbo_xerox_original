@@ -29,7 +29,7 @@ const getDirSize = (dirPath) => {
 
 // 1. DASHBOARD STATS (Integrity: Full Stats + Activity + Disk)
 exports.getAdminStats = async (req, res) => {
-  console.log("\n[DEBUG-ADMIN] Dashboard stats fetching... by User ID:", req.user._id);
+
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -123,7 +123,7 @@ exports.getAdminStats = async (req, res) => {
       recentActivity: combinedActivity,
     };
 
-    console.log("[DEBUG-ADMIN] Notifications Payload:", responsePayload.notifications);
+
     res.json(responsePayload);
   } catch (error) {
     console.error("[DEBUG-ERR] Stats Logic Failed:", error.message);

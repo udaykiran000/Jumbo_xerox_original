@@ -32,6 +32,8 @@ import { useSelector } from "react-redux";
 import { selectUser } from "../../redux/slices/authSlice";
 import { selectConfig } from "../../redux/slices/configSlice";
 import { Store, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { fadeInUp, staggerContainer, scaleIn, slideInUp, pageTransition } from "../../components/common/Animations";
 
 export default function UserDashboard() {
   const navigate = useNavigate();
@@ -161,18 +163,26 @@ export default function UserDashboard() {
       : "bg-slate-50 text-slate-900";
 
   return (
-    <div
+    <motion.div
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageTransition}
       className={`${themeClasses} min-h-screen transition-colors duration-500 font-sans pb-32`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 space-y-16">
         {/* 1. HEADER */}
-        <header
+        <motion.header
+          variants={fadeInUp}
           className={`${theme === "dark" ? "bg-white/5 border-white/10" : "bg-white border-slate-200"} backdrop-blur-xl p-10 rounded-[3rem] flex flex-col md:flex-row justify-between items-center border shadow-2xl gap-6`}
         >
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center text-3xl font-black shadow-lg uppercase">
+            <motion.div 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-20 h-20 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center text-3xl font-black shadow-lg uppercase"
+            >
               {userData.name?.charAt(0)}
-            </div>
+            </motion.div>
             <div>
               <h1 className="text-3xl font-black tracking-tight italic">
                 Hello, {userData.name}! 👋
@@ -180,16 +190,24 @@ export default function UserDashboard() {
               <p className="text-slate-500 font-medium">{userData.email}</p>
             </div>
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 180 }}
+            whileTap={{ scale: 0.9 }}
             onClick={toggleTheme}
             className="p-4 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 transition-all border border-slate-200/50"
           >
             {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
-          </button>
-        </header>
+          </motion.button>
+        </motion.header>
 
         {/* 2. STATS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
           <StatCard
             label="Total Requests"
             value={stats.total}
@@ -211,10 +229,14 @@ export default function UserDashboard() {
             color="text-emerald-500"
             theme={theme}
           />
-        </div>
+        </motion.div>
 
         {/* 3. RECENT ORDERS TABLE */}
-        <div
+        <motion.div
+          variants={slideInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
           className={`${theme === "dark" ? "bg-white/5 border-white/10" : "bg-white border-slate-200"} p-10 rounded-[3rem] border shadow-2xl`}
         >
           <h2 className="text-2xl font-black mb-8 px-4 border-l-4 border-blue-600 uppercase tracking-tighter">
@@ -229,9 +251,13 @@ export default function UserDashboard() {
               </p>
             </div>
           ) : orders.length === 0 ? (
-            <div className="py-24 text-center text-slate-400 font-bold italic border-2 border-dashed border-slate-200 rounded-[2rem]">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-24 text-center text-slate-400 font-bold italic border-2 border-dashed border-slate-200 rounded-[2rem]"
+            >
               No orders found. Start your first project!
-            </div>
+            </motion.div>
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -246,75 +272,85 @@ export default function UserDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentOrders.map((order) => (
-                      <tr
-                        key={order._id}
-                        className={`${theme === "dark" ? "bg-white/5" : "bg-slate-50"} hover:bg-blue-500/5 transition-all rounded-2xl`}
-                      >
-                        <td className="py-6 px-6 rounded-l-2xl font-mono text-xs font-bold text-blue-600 italic">
-                          #{order._id.slice(-6).toUpperCase()}
-                        </td>
-                        <td className="py-6 px-6 font-black text-sm uppercase">
-                          {order.serviceType}
-                        </td>
-                        <td className="py-6 px-6">
-                          <div className="flex flex-col">
-                            <span className="font-black italic text-sm">
-                              ₹{order.totalAmount}
-                            </span>
-                            <span
-                              className={`text-[9px] font-black uppercase tracking-widest ${order.paymentStatus === "Paid" ? "text-emerald-500" : "text-orange-500"}`}
-                            >
-                              {order.paymentStatus}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-6 px-6 font-bold text-slate-500">
-                          {order.status}
-                        </td>
-                        <td className="py-6 px-6 rounded-r-2xl text-right">
-                          <div className="flex items-center justify-end gap-3">
-                            {/* LOGICAL CONNECTIVITY: PAY NOW BUTTON */}
-                            {order.paymentStatus === "Pending" &&
-                              !order.filesDeleted && (
-                                <button
-                                  onClick={() => handlePayNow(order._id)}
-                                  disabled={isResuming}
-                                  className="bg-blue-600 text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-lg animate-pulse flex items-center gap-2"
-                                >
-                                  {isResuming ? (
-                                    <Loader2
-                                      className="animate-spin"
-                                      size={12}
-                                    />
-                                  ) : (
-                                    <>
-                                      <CreditCard size={14} /> Pay Now
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                            {order.filesDeleted &&
-                              order.paymentStatus === "Pending" && (
-                                <span className="text-[9px] font-black text-red-500 uppercase bg-red-50 px-4 py-2 rounded-xl border border-red-100 flex items-center gap-1">
-                                  <AlertCircle size={10} /> Expired
-                                </span>
-                              )}
-                            <button
-                              onClick={() => openOrderDetails(order)}
-                              className="bg-slate-800 text-white p-3 rounded-xl hover:bg-blue-600 transition-all shadow-lg"
-                            >
-                              <ExternalLink size={18} />
-                            </button>
-                             {userData.role === "admin" && order.shipmentId && (
-                                <button className="bg-purple-100 text-purple-600 p-2 rounded-lg text-xs font-bold">
-                                  {order.shipmentId}
-                                </button>
-                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    <AnimatePresence>
+                      {currentOrders.map((order, index) => (
+                        <motion.tr
+                          key={order._id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ delay: index * 0.05 }}
+                          className={`${theme === "dark" ? "bg-white/5" : "bg-slate-50"} hover:bg-blue-500/5 transition-all rounded-2xl`}
+                        >
+                          <td className="py-6 px-6 rounded-l-2xl font-mono text-xs font-bold text-blue-600 italic">
+                            #{order._id.slice(-6).toUpperCase()}
+                          </td>
+                          <td className="py-6 px-6 font-black text-sm uppercase">
+                            {order.serviceType}
+                          </td>
+                          <td className="py-6 px-6">
+                            <div className="flex flex-col">
+                              <span className="font-black italic text-sm">
+                                ₹{order.totalAmount}
+                              </span>
+                              <span
+                                className={`text-[9px] font-black uppercase tracking-widest ${order.paymentStatus === "Paid" ? "text-emerald-500" : "text-orange-500"}`}
+                              >
+                                {order.paymentStatus}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-6 px-6 font-bold text-slate-500">
+                            {order.status}
+                          </td>
+                          <td className="py-6 px-6 rounded-r-2xl text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              {/* LOGICAL CONNECTIVITY: PAY NOW BUTTON */}
+                              {order.paymentStatus === "Pending" &&
+                                !order.filesDeleted && (
+                                  <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handlePayNow(order._id)}
+                                    disabled={isResuming}
+                                    className="bg-blue-600 text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-lg animate-pulse flex items-center gap-2"
+                                  >
+                                    {isResuming ? (
+                                      <Loader2
+                                        className="animate-spin"
+                                        size={12}
+                                      />
+                                    ) : (
+                                      <>
+                                        <CreditCard size={14} /> Pay Now
+                                      </>
+                                    )}
+                                  </motion.button>
+                                )}
+                              {order.filesDeleted &&
+                                order.paymentStatus === "Pending" && (
+                                  <span className="text-[9px] font-black text-red-500 uppercase bg-red-50 px-4 py-2 rounded-xl border border-red-100 flex items-center gap-1">
+                                    <AlertCircle size={10} /> Expired
+                                  </span>
+                                )}
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => openOrderDetails(order)}
+                                className="bg-slate-800 text-white p-3 rounded-xl hover:bg-blue-600 transition-all shadow-lg"
+                              >
+                                <ExternalLink size={18} />
+                              </motion.button>
+                               {userData.role === "admin" && order.shipmentId && (
+                                  <button className="bg-purple-100 text-purple-600 p-2 rounded-lg text-xs font-bold">
+                                    {order.shipmentId}
+                                  </button>
+                               )}
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
                   </tbody>
                 </table>
               </div>
@@ -345,14 +381,25 @@ export default function UserDashboard() {
               )}
             </>
           )}
-        </div>
+        </motion.div>
 
         {/* 4. BIG SERVICE CARDS */}
         <div className="space-y-12">
-          <h2 className="text-4xl font-black text-center tracking-tighter uppercase italic">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl font-black text-center tracking-tighter uppercase italic"
+          >
             Order New Prints
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          </motion.h2>
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-10"
+          >
             <ServiceCard
               title="Quick Printouts"
               img={a4Img}
@@ -368,11 +415,17 @@ export default function UserDashboard() {
               img={bcardImg}
               link="/business-cards"
             />
-          </div>
+          </motion.div>
         </div>
 
         {/* 5. NOTES SECTION */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10">
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10"
+        >
           <NoteBox
             icon={<FiMapPin />}
             title="STORE PICKUP"
@@ -391,243 +444,272 @@ export default function UserDashboard() {
             desc="info@jumboxerox.com"
             color="green"
           />
-        </div>
+        </motion.div>
       </div>
 
       {/* --- ORDER DETAILS MODAL --- */}
-      {showModal && selectedOrder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
-            <div className="bg-blue-600 p-8 text-white flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <Package size={24} />
-                <h2 className="text-xl font-black uppercase tracking-tight italic">
-                  Order Analysis
-                </h2>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="bg-white/20 p-2 rounded-xl hover:bg-white/40 transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-10 space-y-8">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Global Order ID
-                  </p>
-                  <p className="font-mono text-blue-600 font-bold truncate">
-                    {selectedOrder._id}
-                  </p>
+      <AnimatePresence>
+        {showModal && selectedOrder && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl"
+            >
+              <div className="bg-blue-600 p-8 text-white flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Package size={24} />
+                  <h2 className="text-xl font-black uppercase tracking-tight italic">
+                    Order Analysis
+                  </h2>
                 </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Service Class
-                  </p>
-                  <p className="font-bold text-slate-800 uppercase italic">
-                    {selectedOrder.serviceType}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Logistics Mode
-                  </p>
-                  <p className="font-bold text-slate-800 uppercase">
-                    {selectedOrder.deliveryMode}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Total Settle
-                  </p>
-                  <p className="font-black text-xl text-blue-600">
-                    ₹{selectedOrder.totalAmount}
-                  </p>
-                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="bg-white/20 p-2 rounded-xl hover:bg-white/40 transition-all"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2 tracking-widest italic border-b pb-2">
-                  <Info size={14} /> Technical Specs
-                </h4>
-                <div className="grid grid-cols-2 gap-y-3 text-xs font-bold">
-                  <p className="text-slate-500 uppercase">
-                    Pages:{" "}
-                    <span className="text-slate-800">
-                      {selectedOrder.details?.pages || "—"}
-                    </span>
-                  </p>
-                  <p className="text-slate-500 uppercase">
-                    Copies:{" "}
-                    <span className="text-slate-800">
-                      {selectedOrder.details?.copies || "1"}
-                    </span>
-                  </p>
-                  <p className="text-slate-500 uppercase">
-                    Size:{" "}
-                    <span className="text-slate-800">
-                      {selectedOrder.details?.size || "Standard"}
-                    </span>
-                  </p>
-                  <p className="text-slate-500 uppercase">
-                    Status:{" "}
-                    <span className="text-blue-600 italic">
-                      {selectedOrder.status}
-                    </span>
-                  </p>
+              <div className="p-10 space-y-8">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Global Order ID
+                    </p>
+                    <p className="font-mono text-blue-600 font-bold truncate">
+                      {selectedOrder._id}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Service Class
+                    </p>
+                    <p className="font-bold text-slate-800 uppercase italic">
+                      {selectedOrder.serviceType}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Logistics Mode
+                    </p>
+                    <p className="font-bold text-slate-800 uppercase">
+                      {selectedOrder.deliveryMode}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Total Settle
+                    </p>
+                    <p className="font-black text-xl text-blue-600">
+                      ₹{selectedOrder.totalAmount}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Shipping Info Section */}
-              {selectedOrder.shipmentId && (
-                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 mb-6">
-                  <h4 className="text-[10px] font-black text-purple-400 uppercase mb-4 flex items-center gap-2 tracking-widest italic border-b border-purple-200 pb-2">
-                    <Package size={14} /> Logistics Info
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2 tracking-widest italic border-b pb-2">
+                    <Info size={14} /> Technical Specs
                   </h4>
                   <div className="grid grid-cols-2 gap-y-3 text-xs font-bold">
                     <p className="text-slate-500 uppercase">
-                      Courier:{" "}
+                      Pages:{" "}
                       <span className="text-slate-800">
-                        {selectedOrder.courierName || "Standard"}
+                        {selectedOrder.details?.pages || "—"}
                       </span>
                     </p>
                     <p className="text-slate-500 uppercase">
-                      AWB:{" "}
+                      Copies:{" "}
                       <span className="text-slate-800">
-                        {selectedOrder.awbNumber || selectedOrder.shipmentId}
+                        {selectedOrder.details?.copies || "1"}
                       </span>
                     </p>
-                    <div className="col-span-2 mt-2">
-                      <a
-                        href={`https://shiprocket.co/tracking/${selectedOrder.awbNumber}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3 bg-purple-600 text-white rounded-xl uppercase text-[10px] tracking-widest hover:bg-purple-700 transition"
-                      >
-                        Track Shipment <ExternalLink size={12} />
-                      </a>
+                    <p className="text-slate-500 uppercase">
+                      Size:{" "}
+                      <span className="text-slate-800">
+                        {selectedOrder.details?.size || "Standard"}
+                      </span>
+                    </p>
+                    <p className="text-slate-500 uppercase">
+                      Status:{" "}
+                      <span className="text-blue-600 italic">
+                        {selectedOrder.status}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Shipping Info Section */}
+                {selectedOrder.shipmentId && (
+                  <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 mb-6">
+                    <h4 className="text-[10px] font-black text-purple-400 uppercase mb-4 flex items-center gap-2 tracking-widest italic border-b border-purple-200 pb-2">
+                      <Package size={14} /> Logistics Info
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 text-xs font-bold">
+                      <p className="text-slate-500 uppercase">
+                        Courier:{" "}
+                        <span className="text-slate-800">
+                          {selectedOrder.courierName || "Standard"}
+                        </span>
+                      </p>
+                      <p className="text-slate-500 uppercase">
+                        AWB:{" "}
+                        <span className="text-slate-800">
+                          {selectedOrder.awbNumber || selectedOrder.shipmentId}
+                        </span>
+                      </p>
+                      <div className="col-span-2 mt-2">
+                        <a
+                          href={`https://shiprocket.co/tracking/${selectedOrder.awbNumber}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-purple-600 text-white rounded-xl uppercase text-[10px] tracking-widest hover:bg-purple-700 transition"
+                        >
+                          Track Shipment <ExternalLink size={12} />
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Files Section with Expiry Sync */}
-              {selectedOrder.files && selectedOrder.files.length > 0 && (
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">
-                    Document Assets
-                  </h4>
-                  <div className="space-y-3">
-                    {selectedOrder.files.map((file, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 group transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="text-blue-600" size={18} />
-                          <span className="text-xs font-black text-slate-700 truncate w-40 md:w-64 italic">
-                            {file.name}
-                          </span>
+                {/* Files Section with Expiry Sync */}
+                {selectedOrder.files && selectedOrder.files.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">
+                      Document Assets
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedOrder.files.map((file, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 group transition-all"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="text-blue-600" size={18} />
+                            <span className="text-xs font-black text-slate-700 truncate w-40 md:w-64 italic">
+                              {file.name}
+                            </span>
+                          </div>
+                          {selectedOrder.filesDeleted ? (
+                            <span className="text-[9px] font-black text-red-500 uppercase">
+                              Purged
+                            </span>
+                          ) : (
+                            <a
+                              href={`${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}${file.url}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-black uppercase tracking-widest"
+                            >
+                              <Download size={14} /> Open Source
+                            </a>
+                          )}
                         </div>
-                        {selectedOrder.filesDeleted ? (
-                          <span className="text-[9px] font-black text-red-500 uppercase">
-                            Purged
-                          </span>
-                        ) : (
-                          <a
-                            href={`${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}${file.url}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-black uppercase tracking-widest"
-                          >
-                            <Download size={14} /> Open Source
-                          </a>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- MOCK PAYMENT MODAL --- */}
+      <AnimatePresence>
+        {showMockPayment && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white w-full max-w-[400px] overflow-hidden rounded-2xl shadow-2xl relative flex flex-col"
+            >
+              {/* Header */}
+              <div className="bg-[#2b84ea] p-6 text-white flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-lg">Jumbo Xerox</h3>
+                  <p className="text-xs opacity-90">Test Mode Payment</p>
+                </div>
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Store size={20} />
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-8 space-y-6">
+                <div className="text-center">
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">
+                    Payable Amount
+                  </p>
+                  <h2 className="text-4xl font-black text-gray-900">
+                    ₹{mockOrderData?.order?.totalAmount || mockOrderData?.amount || "0.00"}
+                  </h2>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3">
+                  <div className="bg-blue-500 text-white p-1 rounded-full mt-0.5">
+                    <CheckCircle2 size={12} />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-blue-900">
+                      Development Mode
+                    </h5>
+                    <p className="text-xs text-blue-700 leading-relaxed mt-1">
+                      This is a simulated transaction. No actual money will be
+                      deducted.
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* --- MOCK PAYMENT MODAL --- */}
-      {showMockPayment && (
-        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-[400px] overflow-hidden rounded-2xl shadow-2xl relative flex flex-col animate-in fade-in zoom-in duration-300">
-            {/* Header */}
-            <div className="bg-[#2b84ea] p-6 text-white flex justify-between items-center">
-              <div>
-                <h3 className="font-bold text-lg">Jumbo Xerox</h3>
-                <p className="text-xs opacity-90">Test Mode Payment</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <Store size={20} />
-              </div>
-            </div>
 
-            {/* Body */}
-            <div className="p-8 space-y-6">
-              <div className="text-center">
-                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">
-                  Payable Amount
+                <div className="space-y-3 pt-4">
+                  <button
+                    onClick={() => handleMockPaymentAction(true)}
+                    className="w-full py-4 bg-[#2b84ea] hover:bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex justify-center items-center gap-2"
+                  >
+                    Success <ChevronRight size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleMockPaymentAction(false)}
+                    className="w-full py-4 bg-white border-2 border-gray-100 hover:bg-gray-50 text-gray-600 font-bold rounded-xl transition-all active:scale-95"
+                  >
+                    Cancel Transaction
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
+                  <CreditCard size={12} /> 100% Secure (Mock)
                 </p>
-                <h2 className="text-4xl font-black text-gray-900">
-                  ₹{mockOrderData?.order?.totalAmount || mockOrderData?.amount || "0.00"}
-                </h2>
               </div>
-
-              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3">
-                <div className="bg-blue-500 text-white p-1 rounded-full mt-0.5">
-                  <CheckCircle2 size={12} />
-                </div>
-                <div>
-                  <h5 className="font-bold text-sm text-blue-900">
-                    Development Mode
-                  </h5>
-                  <p className="text-xs text-blue-700 leading-relaxed mt-1">
-                    This is a simulated transaction. No actual money will be
-                    deducted.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4">
-                <button
-                  onClick={() => handleMockPaymentAction(true)}
-                  className="w-full py-4 bg-[#2b84ea] hover:bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex justify-center items-center gap-2"
-                >
-                  Success <ChevronRight size={16} />
-                </button>
-                <button
-                  onClick={() => handleMockPaymentAction(false)}
-                  className="w-full py-4 bg-white border-2 border-gray-100 hover:bg-gray-50 text-gray-600 font-bold rounded-xl transition-all active:scale-95"
-                >
-                  Cancel Transaction
-                </button>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
-                <CreditCard size={12} /> 100% Secure (Mock)
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
 // --- Internal Helper Components ---
 const StatCard = ({ label, value, icon, color, theme }) => (
-  <div
+  <motion.div
+    variants={scaleIn}
+    whileHover={{ y: -5 }}
     className={`${theme === "dark" ? "bg-white/5 border-white/10" : "bg-white border-slate-200"} p-10 rounded-[3rem] border shadow-xl flex items-center justify-between`}
   >
     <div>
@@ -641,11 +723,14 @@ const StatCard = ({ label, value, icon, color, theme }) => (
     <div className={`${color} bg-current/10 p-6 rounded-[2.2rem]`}>
       {React.cloneElement(icon, { size: 40 })}
     </div>
-  </div>
+  </motion.div>
 );
 
 const ServiceCard = ({ title, img, link }) => (
-  <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden group border border-slate-100 hover:translate-y-[-10px] transition-all duration-500">
+  <motion.div 
+    variants={scaleIn}
+    className="bg-white rounded-[3rem] shadow-2xl overflow-hidden group border border-slate-100 hover:translate-y-[-10px] transition-all duration-500"
+  >
     <div className="h-80 overflow-hidden relative">
       <img
         src={img}
@@ -665,7 +750,7 @@ const ServiceCard = ({ title, img, link }) => (
         Start Project
       </Link>
     </div>
-  </div>
+  </motion.div>
 );
 
 const NoteBox = ({ icon, title, desc, color }) => {
@@ -675,7 +760,8 @@ const NoteBox = ({ icon, title, desc, color }) => {
     green: "bg-emerald-100 border-emerald-500 text-emerald-900",
   };
   return (
-    <div
+    <motion.div
+      variants={scaleIn}
       className={`${colors[color]} p-10 rounded-[2.8rem] border-l-[12px] shadow-lg`}
     >
       <div className="flex items-center gap-4 mb-3 font-black uppercase text-[10px] tracking-widest">
@@ -684,6 +770,6 @@ const NoteBox = ({ icon, title, desc, color }) => {
       <p className="text-[11px] font-black uppercase tracking-tight italic opacity-70">
         {desc}
       </p>
-    </div>
+    </motion.div>
   );
 };

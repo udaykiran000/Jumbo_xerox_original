@@ -10,10 +10,10 @@ import {
   UserPlus,
   ArrowUpRight,
   ShoppingCart,
-  Clock,
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { fadeInUp, staggerContainer, scaleIn } from "../../components/common/Animations";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -25,23 +25,18 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchDashboardStats = async () => {
-    console.log("[DEBUG-UI] Syncing Holistic Admin Stats...");
     try {
       const { data } = await api.get("/admin/stats");
       setStats(data);
-      console.log("[DEBUG-UI] Dashboard Data Synced successfully.");
     } catch (error) {
-      console.error("[DEBUG-UI-ERR] Dashboard sync failed:", error);
+      console.error("Dashboard sync failed:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- ACTION: Navigate to Order Details ---
   const handleActivityClick = (item) => {
     if (item.type === "order") {
-      console.log(`[DEBUG-NAV] Directing to Order Detail: ${item._id}`);
-      // Passing state to AdminOrders page to auto-open the modal
       navigate("/admin/orders", { state: { openOrderId: item._id } });
     } else {
       navigate("/admin/users");
@@ -50,10 +45,10 @@ export default function AdminDashboard() {
 
   if (loading)
     return (
-      <div className="h-96 flex flex-col items-center justify-center text-blue-600 gap-4">
+      <div className="h-96 flex flex-col items-center justify-center text-blue-500 gap-4">
         <Loader2 className="animate-spin" size={32} />
-        <p className="font-semibold text-sm uppercase tracking-wider">
-          Loading Dashboard...
+        <p className="font-medium text-sm text-slate-400">
+          Loading Dashboard Data...
         </p>
       </div>
     );
@@ -62,173 +57,189 @@ export default function AdminDashboard() {
     {
       title: "Total Orders",
       value: stats?.todayOrders?.total || 0,
-      color: "bg-[#7c3aed]",
-      icon: <ShoppingBag size={24} />,
+      icon: <ShoppingBag size={20} />,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      border: "border-purple-100",
     },
     {
       title: "Active Processing",
       value: stats?.processing || 0,
-      color: "bg-[#f59e0b]",
-      icon: <Activity size={24} />,
+      icon: <Activity size={20} />,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-100",
     },
     {
       title: "Completed Today",
       value: stats?.todayOrders?.completed || 0,
-      color: "bg-[#10b981]",
-      icon: <CheckCircle2 size={24} />,
+      icon: <CheckCircle2 size={20} />,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      border: "border-emerald-100",
     },
     {
-      title: "Revenue Stream",
+      title: "Total Revenue",
       value: `₹${stats?.totalRev?.toLocaleString()}`,
       sub: `Today: ₹${stats?.todayRev}`,
-      color: "bg-[#2563eb]",
-      icon: <IndianRupee size={24} />,
+      icon: <IndianRupee size={20} />,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      border: "border-blue-100",
     },
     {
       title: "Customer Base",
       value: stats?.totalUsers || 0,
-      color: "bg-[#8b5cf6]",
-      icon: <Users size={24} />,
+      icon: <Users size={20} />,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
+      border: "border-indigo-100",
     },
     {
       title: "New Registrations",
       value: stats?.todayReg || 0,
-      color: "bg-[#ec4899]",
-      icon: <UserPlus size={24} />,
+      icon: <UserPlus size={20} />,
+      color: "text-pink-600",
+      bg: "bg-pink-50",
+      border: "border-pink-100",
     },
   ];
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 font-sans">
-      {/* 1. HEADER SECTION (BRIGHT UI) */}
-      <div className="flex justify-between items-end">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={fadeInUp}
+      className="space-y-8 font-sans"
+    >
+      {/* 1. HEADER */}
+      <div className="flex justify-between items-end border-b border-gray-200 pb-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">
-            Overview
-          </p>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Dashboard
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Dashboard Overview
           </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Welcome back, here's what's happening in your store today.
+          </p>
         </div>
         <div className="hidden md:block text-right">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
             Last Sync
           </p>
-          <p className="text-xs font-bold text-slate-600">
+          <p className="text-sm font-semibold text-slate-700">
             {new Date().toLocaleTimeString()}
           </p>
         </div>
       </div>
 
-      {/* 2. RESPONSIVE COLORFUL CARDS (Sync with Image 9) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      {/* 2. STATS GRID (Clean Cards) */}
+      <motion.div 
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+      >
         {cards.map((card, i) => (
           <motion.div
             key={i}
-            whileHover={{ y: -8, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className={`${card.color} p-8 rounded-3xl text-white shadow-2xl shadow-blue-900/10 relative overflow-hidden group cursor-default`}
+            variants={scaleIn}
+            whileHover={{ y: -5 }}
+            className="p-6 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all group"
           >
-            <div className="relative z-10">
-              <div className="bg-white/20 w-fit p-4 rounded-2xl mb-6 shadow-inner group-hover:scale-110 transition-transform">
+            <div className="flex items-start justify-between mb-4">
+              <div
+                className={`p-3 rounded-lg ${card.bg} ${card.color} border ${card.border} transition-colors`}
+              >
                 {card.icon}
               </div>
-              <p className="text-xs font-bold uppercase tracking-wide opacity-70 mb-1">
-                {card.title}
-              </p>
-              <h3 className="text-3xl font-bold tracking-tight">
-                {card.value}
-              </h3>
               {card.sub && (
-                <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                  <p className="text-[10px] font-bold uppercase tracking-tight">
-                    {card.sub}
-                  </p>
-                  <ArrowUpRight size={14} className="opacity-50" />
-                </div>
+                <span className="text-xs font-medium text-slate-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                  {card.sub}
+                </span>
               )}
             </div>
-            {/* Background Aesthetic Blur */}
-            <div className="absolute top-[-10%] right-[-10%] w-48 h-48 bg-white/10 rounded-full blur-[60px] group-hover:bg-white/20 transition-all duration-500" />
+            <p className="text-sm font-medium text-slate-500">{card.title}</p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">
+              {card.value}
+            </h3>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      {/* 3. RECENT ACTIVITY HUB (Actionable UI) */}
-      <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-xl shadow-blue-900/5 animate-in slide-in-from-bottom duration-700">
-        <div className="p-8 md:p-10 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-3">
-            <Activity className="text-blue-600" size={20} /> Recent Activity
+      {/* 3. RECENT ACTIVITY (List Style) */}
+      <motion.div 
+        variants={fadeInUp}
+        className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+      >
+        <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
+          <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            <Activity className="text-slate-400" size={18} /> Recent Activity
           </h3>
           <button
             onClick={() => navigate("/admin/orders")}
-            className="text-xs font-bold uppercase tracking-wide bg-blue-600 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
           >
-            Manage All
+            View All Orders
           </button>
         </div>
 
-        <div className="p-6 md:p-8 space-y-4">
+        <div className="divide-y divide-gray-100">
           {!stats?.recentActivity || stats.recentActivity.length === 0 ? (
-            <div className="p-20 text-center italic text-slate-400 font-bold">
-              No recent activities to show.
+            <div className="p-12 text-center text-slate-500 text-sm">
+              No recent activity recorded.
             </div>
           ) : (
             stats.recentActivity.map((item, idx) => (
-              <div
+              <motion.div
                 key={idx}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
                 onClick={() => handleActivityClick(item)}
-                className="flex items-center gap-5 p-6 rounded-3xl bg-white border border-gray-100 hover:border-blue-300 hover:bg-blue-50/20 transition-all cursor-pointer group"
+                className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer group"
               >
                 <div
-                  className={`p-4 rounded-2xl shadow-sm group-hover:shadow-lg transition-all ${
+                  className={`p-2 rounded-lg shrink-0 ${
                     item.type === "order"
-                      ? "bg-blue-50 text-blue-600"
-                      : "bg-purple-50 text-purple-600"
+                      ? "bg-blue-50 text-blue-600 border border-blue-100"
+                      : "bg-purple-50 text-purple-600 border border-purple-100"
                   }`}
                 >
                   {item.type === "order" ? (
-                    <ShoppingCart size={22} />
+                    <ShoppingCart size={18} />
                   ) : (
-                    <UserPlus size={22} />
+                    <UserPlus size={18} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-900 text-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-slate-900 text-sm truncate">
                       {item.type === "order"
-                        ? `${item.user?.name || "Customer"} placed a New Order`
-                        : `${item.name} joined Jumbo Xerox`}
+                        ? item.user?.name || "Customer"
+                        : item.name}
                     </p>
-                    {!item.isRead && item.type === "order" && (
-                      <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                    )}
+                    <span className="text-xs text-slate-400 whitespace-nowrap">
+                      {new Date(item.activityTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">
                     {item.type === "order"
-                      ? `₹${item.totalAmount} • ${item.paymentMethod} • #${item._id?.slice(-6).toUpperCase()}`
-                      : `${item.email}`}
+                      ? `Placed order #${item._id?.slice(-6).toUpperCase()} • ₹${item.totalAmount}`
+                      : `Newly registered via ${item.email}`}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
-                    {new Date(item.activityTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                  <div className="flex justify-end mt-1">
-                    <ArrowUpRight
-                      size={16}
-                      className="text-slate-200 group-hover:text-blue-500 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
+                <ArrowUpRight
+                  size={16}
+                  className="text-slate-300 group-hover:text-slate-500"
+                />
+              </motion.div>
             ))
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

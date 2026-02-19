@@ -18,9 +18,12 @@ import {
   MapPin,
   CreditCard,
   Hash,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { fetchDashboardStats } from "../../redux/slices/dashboardSlice";
+import { fadeInUp, staggerContainer, slideInUp, scaleIn } from "../../components/common/Animations";
 
 const AdminOrders = () => {
   const { state } = useLocation();
@@ -28,28 +31,26 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [fileStatus, setFileStatus] = useState(null); // File Check State
+  const [fileStatus, setFileStatus] = useState(null);
 
-  const [timers, setTimers] = useState({}); // { [id]: seconds }
-  const [pendingStatuses, setPendingStatuses] = useState({}); // { [id]: status }
-  const timeouts = useRef({}); // { [id]: timeoutID }
+  const [timers, setTimers] = useState({});
+  const [pendingStatuses, setPendingStatuses] = useState({});
+  const timeouts = useRef({});
 
   const dispatch = useDispatch();
 
-  // Safe API URL Logic (Original Integrity Preserved)
   const rawUrl =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  const API_BASE_URL = rawUrl.replace("/api", "");
+  // Fix for double slash issue if env var ends with /
+  const API_BASE_URL = rawUrl.endsWith("/api") ? rawUrl.replace("/api", "") : rawUrl;
 
   useEffect(() => {
     fetchOrders();
-    // Cleanup on unmount
     return () => {
       Object.values(timeouts.current).forEach((id) => clearTimeout(id));
     };
   }, []);
 
-  // Dashboard Auto-open Logic (Original Integrity Preserved)
   useEffect(() => {
     if (orders.length > 0 && state?.openOrderId) {
       const target = orders.find((o) => o._id === state.openOrderId);
@@ -57,7 +58,6 @@ const AdminOrders = () => {
     }
   }, [orders, state]);
 
-  // Fetch File Status when Order Selected
   useEffect(() => {
     if (selectedOrder && !selectedOrder.filesDeleted) {
       const checkFiles = async () => {
@@ -75,7 +75,6 @@ const AdminOrders = () => {
     }
   }, [selectedOrder]);
 
-  // Global Tick for Visual Timers
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prev) => {
@@ -99,7 +98,7 @@ const AdminOrders = () => {
       const { data } = await api.get("/admin/orders");
       setOrders(data.orders || []);
     } catch (e) {
-      toast.error("Cloud Sync Failed");
+      toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -110,20 +109,16 @@ const AdminOrders = () => {
     if (!order || order.status === status) return;
 
     if (status === "Completed" || status === "Cancelled") {
-      // Start Timer Logic
       setTimers((prev) => ({ ...prev, [id]: 7 }));
       setPendingStatuses((prev) => ({ ...prev, [id]: status }));
-      toast(`Action locking in 7s...`, { icon: "⏳" });
+      toast(`Status updating in 7s...`, { icon: "⏳" });
 
-      // Clear existing if any
       if (timeouts.current[id]) clearTimeout(timeouts.current[id]);
 
-      // Schedule Commit
       timeouts.current[id] = setTimeout(() => {
         commitStatus(id, status);
       }, 7000);
     } else {
-      // Immediate Change for normal statuses
       commitStatus(id, status);
     }
   };
@@ -143,12 +138,11 @@ const AdminOrders = () => {
       delete next[id];
       return next;
     });
-    toast.success("Action Cancelled", { icon: "🔄" });
+    toast.success("Update Cancelled");
   };
 
   const commitStatus = async (id, status) => {
     try {
-      // Clear local timer state visual immediately
       setTimers((prev) => {
         const next = { ...prev };
         delete next[id];
@@ -157,15 +151,14 @@ const AdminOrders = () => {
       delete timeouts.current[id];
 
       await api.put(`/admin/order/${id}`, { status });
-      toast.success(`Order locked as ${status}`);
+      toast.success(`Order status updated to ${status}`);
       fetchOrders();
-      dispatch(fetchDashboardStats()); // Update badges immediately
+      dispatch(fetchDashboardStats());
     } catch (e) {
-      toast.error(e.response?.data?.message || "Lock active");
+      toast.error(e.response?.data?.message || "Update failed");
     }
   };
 
-  // Holistic Upgrade: ZIP Download Trigger
   const handleZipDownload = async (orderId) => {
     try {
       const response = await api.get(`/admin/download-zip/${orderId}`, {
@@ -193,342 +186,388 @@ const AdminOrders = () => {
       o._id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const getStatusBadge = (status) => {
+    const styles = {
+      Pending: "bg-blue-50 text-blue-700 border-blue-100",
+      Processing: "bg-amber-50 text-amber-700 border-amber-100",
+      Completed: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      Cancelled: "bg-red-50 text-red-700 border-red-100",
+    };
+    return (
+      <span
+        className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+          styles[status] || "bg-gray-50 text-slate-500 border-gray-200"
+        }`}
+      >
+        {status}
+      </span>
+    );
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 font-sans pb-20">
-      <div className="flex justify-between items-center px-4">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-          Orders
-        </h1>
-        <div className="relative w-96">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={fadeInUp}
+      className="space-y-6 font-sans pb-20"
+    >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Order Management
+          </h1>
+          <p className="text-sm text-slate-500">
+            Manage and track all customer orders.
+          </p>
+        </div>
+        <div className="relative w-full sm:w-80">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
             size={18}
           />
           <input
             type="text"
-            placeholder="Search orders..."
-            className="w-full pl-12 pr-6 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-600 shadow-sm outline-none"
+            placeholder="Search by ID, Name, Phone..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm placeholder:text-slate-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[1100px]">
+          <table className="w-full text-left min-w-[1000px]">
             <thead>
-              <tr className="bg-slate-50 border-b border-gray-100 text-xs font-semibold uppercase text-slate-500 tracking-wide">
-                <th className="p-6">ID</th>
-                <th className="p-6">Customer</th>
-                <th className="p-6 text-center">Amount</th>
-                <th className="p-6 text-center">Status</th>
-                <th className="p-6 text-center">Actions</th>
+              <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-4">Order ID</th>
+                <th className="px-6 py-4">Customer</th>
+                <th className="px-6 py-4">Amount</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filteredOrders.map((o) => {
-                const isLocked =
-                  o.status === "Completed" ||
-                  o.status === "Cancelled" ||
-                  o.filesDeleted;
-                const canShip =
-                  o.paymentStatus === "Paid" &&
-                  o.status === "Completed" &&
-                  o.deliveryMode === "Delivery";
+            <motion.tbody 
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="divide-y divide-gray-200"
+            >
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500 text-sm">
+                    No orders found matching your search.
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((o) => {
+                  const isLocked =
+                    o.status === "Completed" ||
+                    o.status === "Cancelled" ||
+                    o.filesDeleted;
+                  const canShip =
+                    o.paymentStatus === "Paid" &&
+                    o.status === "Completed" &&
+                    o.deliveryMode === "Delivery";
 
-                return (
-                  <tr
-                    key={o._id}
-                    className="hover:bg-blue-50/20 transition-all"
-                  >
-                    <td className="p-6 text-blue-600 font-medium text-sm">
-                      #{o._id.slice(-6).toUpperCase()}
-                    </td>
-                    <td className="p-6">
-                      <p className="text-slate-900 font-medium text-sm">
-                        {o.user?.name || "N/A"}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {o.user?.phone || "No Phone"}
-                      </p>
-                    </td>
-                    <td className="p-7 text-center italic font-black text-slate-800 text-lg">
-                      ₹{o.totalAmount}
-                    </td>
-                    <td className="p-7 text-center">
-                      <span
-                        className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border ${
-                          o.status === "Completed"
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : o.status === "Cancelled"
-                              ? "bg-red-50 text-red-600 border-red-100"
-                              : "bg-blue-50 text-blue-600 border-blue-100"
-                        }`}
-                      >
-                        {o.status}
-                      </span>
-                    </td>
-                    <td className="p-7">
-                      <div className="flex items-center justify-center gap-3">
-                        {timers[o._id] !== undefined ? (
-                          <button
-                            onClick={() => cancelTimer(o._id)}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-2 animate-pulse"
-                          >
-                            <RotateCcw size={14} /> UNDO ({timers[o._id]}s)
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            {!isLocked ? (
-                              <select
-                                value={o.status}
-                                onChange={(e) =>
-                                  handleStatusChange(o._id, e.target.value)
-                                }
-                                disabled={o.filesDeleted}
-                                className={`bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium outline-none cursor-pointer focus:ring-2 focus:ring-blue-100 ${
-                                  o.filesDeleted
-                                    ? "opacity-50 cursor-not-allowed"
-                                    : ""
-                                }`}
-                              >
-                                <option value="Pending">Pending</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Completed">Completed</option>
-                                <option value="Cancelled">Cancelled</option>
-                              </select>
-                            ) : (
-                              <div className="bg-slate-100 px-5 py-2.5 rounded-xl text-[10px] font-black text-slate-400 border border-slate-200 uppercase flex items-center gap-2">
-                                <Lock size={14} /> Static
-                              </div>
-                            )}
+                  return (
+                    <motion.tr
+                      key={o._id}
+                      variants={slideInUp}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-sm font-medium text-blue-600">
+                          #{o._id.slice(-6).toUpperCase()}
+                        </span>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {new Date(o.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-medium text-slate-900">
+                          {o.user?.name || "Unknown"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {o.user?.phone || "No Phone"}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-semibold text-slate-900">
+                          ₹{o.totalAmount}
+                        </span>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {o.paymentMethod}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {getStatusBadge(o.status)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          {timers[o._id] !== undefined ? (
                             <button
-                              onClick={() => setSelectedOrder(o)}
-                              className="p-3 bg-blue-600 text-white rounded-xl hover:scale-110 shadow-xl"
+                              onClick={() => cancelTimer(o._id)}
+                              className="px-3 py-1.5 bg-red-50 text-red-600 rounded-md text-xs font-medium flex items-center gap-1.5 animate-pulse border border-red-100"
                             >
-                              <Eye size={18} />
+                              <RotateCcw size={14} /> Undo ({timers[o._id]}s)
                             </button>
-                            {canShip && (
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {!isLocked ? (
+                                <div className="relative">
+                                  <select
+                                    value={o.status}
+                                    onChange={(e) =>
+                                      handleStatusChange(o._id, e.target.value)
+                                    }
+                                    className="appearance-none bg-white border border-gray-300 text-slate-700 text-xs rounded-lg pl-3 pr-8 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium hover:bg-gray-50 transition-colors"
+                                  >
+                                    <option value="Pending">Pending</option>
+                                    <option value="Processing">Processing</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                  </select>
+                                  <ChevronDown
+                                    size={14}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="px-3 py-2 bg-gray-100 text-slate-500 rounded-lg text-xs font-medium border border-gray-200 flex items-center gap-1.5">
+                                  <Lock size={12} /> Locked
+                                </div>
+                              )}
+                              
                               <button
-                                onClick={() =>
-                                  toast.success(
-                                    "Opening Shipment Assignment...",
-                                  )
-                                }
-                                className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-1 shadow-sm"
+                                onClick={() => setSelectedOrder(o)}
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                                title="View Details"
                               >
-                                <Truck size={16} />
-                                <span className="text-xs font-medium">
-                                  SHIP
-                                </span>
+                                <Eye size={18} />
                               </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+                              
+                              {canShip && (
+                                <button
+                                  onClick={() => toast.success("Opening Shipment Assignment...")}
+                                  className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-100"
+                                  title="Ship Order"
+                                >
+                                  <Truck size={18} />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              )}
+            </motion.tbody>
           </table>
         </div>
       </div>
 
       <AnimatePresence>
         {selectedOrder && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[85vh]"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-4xl rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 bg-slate-950 text-white flex justify-between items-center">
+              <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <div>
-                  <h3 className="text-xl font-black italic uppercase tracking-tighter">
-                    Order Specification Master
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Order Details
                   </h3>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    Identity: {selectedOrder._id}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs font-mono text-slate-500 bg-white border border-gray-200 px-2 py-0.5 rounded">
+                      #{selectedOrder._id}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      • {new Date(selectedOrder.createdAt).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSelectedOrder(null)}
-                  className="p-3 bg-white/10 rounded-2xl hover:bg-white/20"
+                  className="p-2 text-slate-400 hover:text-slate-900 hover:bg-gray-200 rounded-full transition-colors"
                 >
-                  <X />
+                  <X size={20} />
                 </button>
               </div>
 
-              <div className="p-10 overflow-y-auto space-y-10 text-left">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                    <h4 className="text-[10px] font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
-                      <User size={14} /> User Info
+              <div className="flex-1 overflow-y-auto p-8 bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="p-5 rounded-lg border border-gray-200 bg-gray-50">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                       Customer
                     </h4>
-                    <p className="font-black text-sm">
-                      {selectedOrder.user?.name}
-                    </p>
-                    <p className="text-[11px] font-black text-blue-600 mt-2">
-                      {selectedOrder.user?.phone}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-slate-900">
+                        {selectedOrder.user?.name}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {selectedOrder.user?.phone}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {selectedOrder.user?.email}
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                    <h4 className="text-[10px] font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
-                      <MapPin size={14} /> {selectedOrder.deliveryMode} Info
+                  
+                  <div className="p-5 rounded-lg border border-gray-200 bg-gray-50">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                       Delivery
                     </h4>
+                    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mb-2 ${
+                        selectedOrder.deliveryMode === "Delivery" 
+                        ? "bg-purple-50 text-purple-700 border border-purple-100" 
+                        : "bg-orange-50 text-orange-700 border border-orange-100"
+                    }`}>
+                        {selectedOrder.deliveryMode}
+                    </span>
                     {selectedOrder.deliveryMode === "Delivery" ? (
-                      <p className="text-[10px] font-bold leading-relaxed">
-                        {selectedOrder.shippingAddress?.street},{" "}
-                        {selectedOrder.shippingAddress?.city},{" "}
-                        {selectedOrder.shippingAddress?.pincode}
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        {selectedOrder.shippingAddress?.street}<br/>
+                        {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.pincode}
                       </p>
                     ) : (
-                      <p className="text-[10px] font-bold uppercase italic">
-                        Pickup: {selectedOrder.pickupDetails?.name || "Self"}
+                      <p className="text-sm text-slate-600">
+                        Store Pickup: <span className="font-medium text-slate-900">{selectedOrder.pickupDetails?.name || "Main Branch"}</span>
                       </p>
                     )}
                   </div>
-                  <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100">
-                    <h4 className="text-[10px] font-black uppercase text-blue-400 mb-4 flex items-center gap-2">
-                      <CreditCard size={14} /> Settlement
+
+                  <div className="p-5 rounded-lg border border-gray-200 bg-gray-50">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                       Payment
                     </h4>
-                    <p className="text-2xl font-black text-blue-700">
+                    <p className="text-2xl font-bold text-slate-900 mb-1">
                       ₹{selectedOrder.totalAmount}
                     </p>
-                    <p className="text-[9px] font-bold uppercase text-blue-400 mt-1">
-                      {selectedOrder.paymentStatus} /{" "}
-                      {selectedOrder.paymentMethod}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
-                  <h4 className="text-[11px] font-black uppercase text-slate-400 mb-6 border-b pb-3 flex items-center gap-2">
-                    <FileText size={16} /> Specs Matrix
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">
-                        Service
-                      </p>
-                      <p className="font-bold text-xs uppercase">
-                        {selectedOrder.serviceType}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">
-                        Print & Size
-                      </p>
-                      <p className="font-bold text-xs uppercase">
-                        {selectedOrder.details?.printType} (
-                        {selectedOrder.details?.size})
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">
-                        Orientation
-                      </p>
-                      <p className="font-bold text-xs uppercase">
-                        {selectedOrder.details?.orientation || "Auto"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">
-                        Lamination
-                      </p>
-                      <p className="font-bold text-xs uppercase">
-                        {selectedOrder.details?.lamination || "None"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase">
-                        Binding / Cover
-                      </p>
-                      <p className="font-bold text-xs uppercase">
-                        {selectedOrder.details?.binding || "No"} /{" "}
-                        {selectedOrder.details?.cover || "No"}
-                      </p>
-                    </div>
-                    <div className="col-span-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase">
-                        Instructions
-                      </p>
-                      <p className="font-bold text-[10px] italic">
-                        {selectedOrder.details?.instructions ||
-                          "Standard processing"}
-                      </p>
+                    <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${
+                            selectedOrder.paymentStatus === "Paid" 
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
+                            : "bg-red-50 text-red-700 border-red-100"
+                        }`}>
+                            {selectedOrder.paymentStatus}
+                        </span>
+                        <span className="text-xs text-slate-500 border border-gray-200 px-2 py-0.5 rounded bg-white">
+                            {selectedOrder.paymentMethod}
+                        </span>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
-                      <Hash size={16} /> Source Documentation
+                <div className="border border-gray-200 rounded-lg overflow-hidden mb-8">
+                  <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                    <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                      <FileText size={16} /> Job Specifications
                     </h4>
-                    {!selectedOrder.filesDeleted && (
-                      fileStatus?.available ? (
+                  </div>
+                  <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Service Type</p>
+                      <p className="text-sm font-medium text-slate-900">{selectedOrder.serviceType}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Details</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {selectedOrder.details?.printType} • {selectedOrder.details?.size}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Finishing</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {selectedOrder.details?.binding || "None"} / {selectedOrder.details?.lamination || "None"}
+                      </p>
+                    </div>
+                     <div>
+                      <p className="text-xs text-slate-500 mb-1">Quantity</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {selectedOrder.details?.copies || 1} Copies • {selectedOrder.details?.pages || "?"} Pages
+                      </p>
+                    </div>
+                    <div className="col-span-full">
+                      <p className="text-xs text-slate-500 mb-1">Special Instructions</p>
+                      <p className="text-sm text-slate-600 bg-gray-50 p-3 rounded border border-gray-200">
+                        {selectedOrder.details?.instructions || "No special instructions provided."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                       Files & Assets
+                    </h4>
+                    {!selectedOrder.filesDeleted && fileStatus?.available && (
                         <button
                           onClick={() => handleZipDownload(selectedOrder._id)}
-                          className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-xl shadow-blue-200"
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium flex items-center gap-2 transition-colors shadow-sm"
                         >
                           <Download size={14} /> Download All (ZIP)
                         </button>
-                      ) : (
-                        <div className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
-                           <AlertTriangle size={14} /> 
-                           {fileStatus ? "Some Files Missing" : "Checking Files..."}
-                        </div>
-                      )
                     )}
                   </div>
-                  <div className="grid gap-4">
+
+                  <div className="grid gap-3">
                     {selectedOrder.filesDeleted ? (
-                      <div className="p-6 bg-red-50 border border-red-100 rounded-3xl flex items-center gap-3 text-red-600">
-                        <AlertTriangle size={20} />
-                        <p className="text-[10px] font-black uppercase tracking-widest">
-                          Assets purged by security policy (48h). Meta-data
-                          preserved.
+                      <div className="p-4 bg-red-50 border border-red-100 rounded-lg flex items-center gap-3 text-red-600">
+                        <AlertTriangle size={18} />
+                        <p className="text-sm font-medium">
+                          Files have been automatically purged in accordance with data retention policy.
                         </p>
                       </div>
                     ) : (
                       (selectedOrder.files || []).map((f, i) => {
-                        const isLoading = !fileStatus;
-                        // Check specific file status
                         const fileMeta = fileStatus?.files?.find(fs => fs.name === f.name);
                         const isMissing = fileMeta && !fileMeta.exists;
-
+                        
                         return (
-                        <div
-                          key={i}
-                          className={`flex justify-between items-center bg-white p-6 rounded-[1.8rem] border ${isMissing ? 'border-red-100 bg-red-50/10' : 'border-slate-100'}`}
-                        >
-                          <span className={`text-xs font-black ${isMissing ? 'text-red-400 decoration-red-200 line-through' : 'text-slate-700'} italic truncate max-w-[500px]`}>
-                            {f.name}
-                          </span>
-                          
-                          {isLoading ? (
-                            <div className="p-3 bg-slate-100 text-slate-400 rounded-xl animate-pulse">
-                              <Clock size={18} />
+                          <div
+                            key={i}
+                            className={`flex justify-between items-center p-4 rounded-lg border ${
+                                isMissing ? 'bg-red-50 border-red-100' : 'bg-white border-gray-200 shadow-sm'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <div className={`p-2 rounded ${isMissing ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                                    <FileText size={18} />
+                                </div>
+                                <span className={`text-sm font-medium truncate ${isMissing ? 'text-red-500 line-through' : 'text-slate-700'}`}>
+                                    {f.name}
+                                </span>
                             </div>
-                          ) : !isMissing ? (
-                            <a
-                              href={`${API_BASE_URL}${f.url}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-3 bg-blue-600 text-white rounded-xl hover:scale-110 shadow-xl"
-                            >
-                              <Download size={18} />
-                            </a>
-                          ) : (
-                             <span className="text-[9px] font-black text-red-400 uppercase tracking-widest bg-red-50 px-3 py-2 rounded-lg border border-red-100">
-                               File Lost
-                             </span>
-                          )}
-                        </div>
-                      )})
+
+                            {!fileStatus ? (
+                                <span className="text-xs text-slate-500 flex items-center gap-1">
+                                    <Clock size={12} /> Checking...
+                                </span>
+                            ) : !isMissing ? (
+                                <a
+                                  href={`${API_BASE_URL}${f.url}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="Download File"
+                                >
+                                  <Download size={18} />
+                                </a>
+                            ) : (
+                                <span className="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded">
+                                    Lost
+                                </span>
+                            )}
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -537,8 +576,8 @@ const AdminOrders = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
-}
+};
 
 export default AdminOrders;

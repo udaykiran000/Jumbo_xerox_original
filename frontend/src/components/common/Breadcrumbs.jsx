@@ -11,40 +11,47 @@ const Breadcrumbs = () => {
     admin: "Dashboard",
     orders: "Manage Orders",
     users: "User Directory",
-    payments: "Transaction History",
-    settings: "Security Settings",
-    shipments: "Logistics & Shipments",
-    "delete-files": "Storage Cleanup",
-    "contact-messages": "Customer Inbox",
+    payments: "Transactions",
+    settings: "Settings",
+    shipments: "Shipments",
+    "delete-files": "File Management",
+    "contact-messages": "Messages",
   };
 
+  if (pathnames.length === 0) return null;
+
   return (
-    <nav className="flex items-center space-x-2 text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 mb-6 overflow-x-auto whitespace-nowrap custom-scrollbar pb-2">
+    <nav className="flex items-center space-x-2 text-sm text-slate-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
       <Link
         to="/admin"
-        className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+        className="flex items-center gap-1 hover:text-blue-600 transition-colors"
       >
-        <Home size={14} />
-        <span>Admin</span>
+        <Home size={16} />
+        <span className="font-medium">Admin</span>
       </Link>
 
       {pathnames.map((name, index) => {
         // Skip 'admin' since we added it manually as 'Home'
-        if (name === "admin") return null;
+        if ((name === "admin" && index === 0) || name === "admin") return null;
 
         const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
         const isLast = index === pathnames.length - 1;
-        const displayName = breadcrumbNameMap[name] || name.replace("-", " ");
+        // Clean up the name
+        let displayName = breadcrumbNameMap[name] || name.replace(/-/g, " ");
+        // Capitalize first letter of each word if it's not in the map
+        if (!breadcrumbNameMap[name]) {
+             displayName = displayName.replace(/\b\w/g, l => l.toUpperCase());
+        }
 
         return (
           <div key={routeTo} className="flex items-center space-x-2">
-            <ChevronRight size={14} className="text-slate-300" />
+            <ChevronRight size={14} className="text-slate-400" />
             {isLast ? (
-              <span className="text-blue-600 font-black">{displayName}</span>
+              <span className="font-semibold text-slate-900">{displayName}</span>
             ) : (
               <Link
                 to={routeTo}
-                className="hover:text-blue-600 transition-colors"
+                className="hover:text-blue-600 transition-colors font-medium"
               >
                 {displayName}
               </Link>

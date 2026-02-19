@@ -4,22 +4,19 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { sendSMS } = require("../services/smsService");
 
-
-
-// UPDATED: generateToken now accepts 'phone' to sync with Frontend Auth State
+// Generate JWT Token with user identity
 const generateToken = (id, name, role, phone) => {
   return jwt.sign({ id, name, role, phone }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
 
-// PHASE 1: Pre-Registration & OTP Trigger (Handshake)
+// PHASE 1: Pre-Registration & OTP Trigger
 exports.registerRequest = async (req, res) => {
-  console.log("\n--- [START] Register OTP Request ---");
   const { name, email, phone, password } = req.body;
 
   try {
-    // Check if user already exists (Email or Phone collision check)
+    // 1. Check for existing user
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
     if (existingUser) {
       return res.status(400).json({
@@ -28,52 +25,53 @@ exports.registerRequest = async (req, res) => {
       });
     }
 
+    // 2. Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Clear old session and save fresh OTP
+    // 3. Update or Create OTP record in Database
     await OTP.findOneAndDelete({ phone });
     await OTP.create({ phone, otp: otpCode });
 
-    // Send SMS via Verified Gateway (Production Mode)
-    // Check Granular Flag: OTP_TEST_MODE
-    if (process.env.OTP_TEST_MODE !== "true") {
-      await sendSMS(phone, otpCode);
-      res.json({ success: true, message: "Verification code sent to mobile." });
-    } else {
-      // Test Mode: Return OTP in response
+    // 4. Handle SMS Delivery based on Test Mode Flag
+    if (process.env.OTP_TEST_MODE === "true") {
       console.log(`[TEST-MODE] OTP for ${phone}: ${otpCode}`);
-      res.json({
+      return res.json({
         success: true,
         message: "Test Mode: OTP captured.",
-        otp: otpCode, // Send to frontend
+        otp: otpCode, // Only sent to frontend for testing
+      });
+    } else {
+      await sendSMS(phone, otpCode);
+      return res.json({ 
+        success: true, 
+        message: "Verification code sent to mobile." 
       });
     }
-    console.log(`DEBUG: OTP ${otpCode} sent to ${phone}`);
   } catch (error) {
-    console.error("DEBUG: Register Request Error ->", error.message);
+    console.error("Register Request Error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// PHASE 2: Verification & Account Creation (Finalizing Identity)
+// PHASE 2: Verification & Account Creation
 exports.registerVerify = async (req, res) => {
-  console.log("\n--- [START] Register Final Verification ---");
   const { name, email, phone, password, otp } = req.body;
 
   try {
-    // 1. Logic Integrity: Verify OTP existence
+    // 1. Validate OTP from Database
     const otpRecord = await OTP.findOne({ phone, otp });
     if (!otpRecord) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid or Expired OTP" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid or Expired OTP" 
+      });
     }
 
-    // 2. Hash Security Key
+    // 2. Security: Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 3. Create User (Identity is now verified)
+    // 3. Create Verified User
     const user = await User.create({
       name,
       email,
@@ -82,13 +80,12 @@ exports.registerVerify = async (req, res) => {
       role: "user",
     });
 
-    // 4. Maintenance: Cleanup verified OTP
+    // 4. Cleanup: Remove used OTP
     await OTP.deleteOne({ _id: otpRecord._id });
 
-    // 5. Holistic Sync: Token now carries 'phone' field for Frontend bypass
+    // 5. Generate session token
     const token = generateToken(user._id, user.name, user.role, user.phone);
 
-    console.log(`SUCCESS: User ${user.email} verified and created.`);
     res.json({
       success: true,
       _id: user._id,
@@ -99,25 +96,29 @@ exports.registerVerify = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error("DEBUG: Register Verify Error ->", error.message);
-    res
-      .status(500)
-      .json({ success: false, message: "Registration Finalization Failed" });
+    console.error("Register Verify Error:", error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Registration Finalization Failed" 
+    });
   }
 };
 
-// LOGIN LOGIC (Standard Credentials Check)
+// LOGIN LOGIC
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    // Holistic Sync: Passing phone to token so Checkout knows it's a verified profile
     const token = generateToken(user._id, user.name, user.role, user.phone);
 
     res.json({
@@ -129,6 +130,86 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
+    console.error("Login Error:", error.message);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// -------------------------------------------------------------------------
+// NEW: OTP LOGIN FLOW (Request)
+// -------------------------------------------------------------------------
+exports.loginOTPRequest = async (req, res) => {
+  const { phone } = req.body;
+  
+  try {
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: "Mobile number not registered." });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store OTP (Reuse Schema)
+    await OTP.findOneAndDelete({ phone });
+    await OTP.create({ phone, otp: otpCode });
+
+    if (process.env.OTP_TEST_MODE === "true") {
+      console.log(`[TEST-MODE] OTP for ${phone}: ${otpCode}`);
+      return res.json({
+        success: true,
+        message: "Test Mode: OTP captured.",
+        otp: otpCode,
+      });
+    } else {
+      // Send real SMS
+      await sendSMS(phone, otpCode);
+      return res.json({ 
+        success: true, 
+        message: "OTP sent to your mobile." 
+      });
+    }
+
+  } catch (error) {
+    console.error("Login OTP Request Error:", error.message);
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+};
+
+// -------------------------------------------------------------------------
+// NEW: OTP LOGIN FLOW (Verify)
+// -------------------------------------------------------------------------
+exports.loginOTPVerify = async (req, res) => {
+  const { phone, otp } = req.body;
+
+  try {
+    const otpRecord = await OTP.findOne({ phone, otp });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid or Expired OTP" });
+    }
+
+    const user = await User.findOne({ phone });
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    // Cleanup
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    // Generate Token
+    const token = generateToken(user._id, user.name, user.role, user.phone);
+
+    res.json({
+      success: true,
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      token,
+    });
+
+  } catch (error) {
+    console.error("Login OTP Verify Error:", error.message);
+    res.status(500).json({ message: "Login failed" });
   }
 };

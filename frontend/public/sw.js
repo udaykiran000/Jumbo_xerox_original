@@ -20,7 +20,7 @@ self.addEventListener("backgroundfetchsuccess", (event) => {
       console.log("🚀 Background Upload Success:", registration.id);
       // Success Notification
       self.registration.showNotification("Upload Complete!", {
-        body: "Nee files safe ga upload ayyayi bro.",
+        body: " upload completed.",
         icon: "/vite.svg",
       });
     })

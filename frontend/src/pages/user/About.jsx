@@ -1,4 +1,7 @@
 import { NavLink } from "react-router-dom";
+import { motion } from "framer-motion";
+import { fadeInUp, slideInLeft, scaleIn } from "../../components/common/Animations";
+import MaskedHeading from "../../components/common/MaskedHeading";
 
 export default function About() {
   return (
@@ -6,16 +9,31 @@ export default function About() {
       {/* HERO / BREADCRUMB */}
       <div className="relative bg-gradient-to-br from-pink-50 via-purple-50 to-white overflow-hidden">
         {/* soft circles */}
-        <div className="absolute -left-40 -top-40 w-96 h-96 rounded-full bg-pink-100 opacity-40" />
-        <div className="absolute right-0 top-10 w-72 h-72 rounded-full bg-purple-100 opacity-40" />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 0.4, scale: 1 }}
+          transition={{ duration: 1 }}
+          className="absolute -left-40 -top-40 w-96 h-96 rounded-full bg-pink-100" 
+        />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 0.4, scale: 1 }}
+          transition={{ duration: 1, delay: 0.3 }}
+          className="absolute right-0 top-10 w-72 h-72 rounded-full bg-purple-100" 
+        />
 
         <div className="relative max-w-7xl mx-auto px-6 py-28 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900">
+          <MaskedHeading className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 inline-block">
             About Us
-          </h1>
+          </MaskedHeading>
 
           {/* breadcrumb */}
-          <div className="mt-6 inline-flex items-center gap-2 bg-white px-6 py-2 rounded-full shadow-sm">
+          <motion.div 
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="mt-6 inline-flex items-center gap-2 bg-white px-6 py-2 rounded-full shadow-sm"
+          >
             <NavLink
               to="/"
               className="text-pink-500 font-medium hover:underline"
@@ -24,14 +42,19 @@ export default function About() {
             </NavLink>
             <span className="text-pink-400">–</span>
             <span className="text-pink-500 font-medium">About Us</span>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* CONTENT SECTION */}
       <div className="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
         {/* Left text */}
-        <div>
+        <motion.div
+           initial="hidden"
+           whileInView="visible"
+           viewport={{ once: true }}
+           variants={slideInLeft}
+        >
           <span className="inline-block mb-4 px-4 py-1 rounded-full bg-pink-100 text-pink-600 text-sm font-semibold">
             MORE ABOUT US
           </span>
@@ -53,19 +76,29 @@ export default function About() {
             quality.
           </p>
 
-          <button className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold shadow hover:opacity-90">
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold shadow hover:opacity-90"
+          >
             MORE ABOUT US
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Right image placeholder */}
-        <div className="relative">
+        <motion.div 
+          className="relative"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={scaleIn}
+        >
           <div className="rounded-2xl bg-gradient-to-br from-teal-200 to-cyan-200 h-80 flex items-center justify-center shadow">
             <span className="text-gray-700 font-semibold">
               Printing Samples Image
             </span>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

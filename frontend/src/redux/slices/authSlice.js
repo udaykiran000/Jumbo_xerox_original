@@ -31,6 +31,7 @@ const initialState = {
   isAuthenticated: false,
   loading: true,
   error: null,
+  viewMode: "user", // Default to user, will be set to 'admin' on login if role is admin
 };
 
 const authSlice = createSlice({
@@ -43,6 +44,12 @@ const authSlice = createSlice({
         state.user = jwtDecode(action.payload);
         state.isAuthenticated = true;
         state.error = null;
+        // Set viewMode to admin if role is admin
+        if (state.user.role === "admin") {
+            state.viewMode = "admin";
+        } else {
+            state.viewMode = "user";
+        }
         localStorage.setItem("token", action.payload);
       } catch (e) {
         state.user = null;
@@ -51,11 +58,18 @@ const authSlice = createSlice({
       }
       state.loading = false;
     },
+    toggleViewMode: (state) => {
+        state.viewMode = state.viewMode === "admin" ? "user" : "admin";
+    },
+    setViewMode: (state, action) => {
+        state.viewMode = action.payload;
+    },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.loading = false;
+      state.viewMode = "user";
       localStorage.removeItem("token");
     },
   },
@@ -68,6 +82,15 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        
+        // Restore viewMode logic could go here, but for now default to admin for admins on reload if we want
+        // Or keep it simple: if admin, default to admin view on hard refresh
+        if (state.user.role === 'admin') {
+             state.viewMode = 'admin'; 
+        } else {
+             state.viewMode = 'user';
+        }
+
         state.loading = false;
       })
       .addCase(checkAuth.rejected, (state) => {
@@ -79,11 +102,12 @@ const authSlice = createSlice({
   },
 });
 
-export const { loginSuccess, logout } = authSlice.actions;
+export const { loginSuccess, logout, toggleViewMode, setViewMode } = authSlice.actions;
 
 // Selectors
 export const selectUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state) => state.auth.loading;
+export const selectViewMode = (state) => state.auth.viewMode;
 
 export default authSlice.reducer;
