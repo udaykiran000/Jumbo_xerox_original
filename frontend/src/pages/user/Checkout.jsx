@@ -33,7 +33,28 @@ const Checkout = () => {
   const user = useSelector(selectUser);
   const config = useSelector(selectConfig);
 
-  // --- 1. CORE STATES (Updated for Sync) ---
+  // --- 1. DATA NORMALIZATION (New) ---
+  const normalizedOrder = useMemo(() => {
+    if (!state) return {};
+    return {
+      ...state,
+      // Map QuickPrint / BusinessCard fields to standard schema
+      paperSize: state.paperSize || state.size,
+      paperType: state.paperType || state.media || state.paper,
+      printColor: state.printColor || state.printType,
+      printSide: state.printSide || state.sides,
+      binding: state.binding,
+      cover: state.cover,
+      lamination: state.lamination,
+      corner: state.corner,
+      cardType: state.cardType, // Business Cards
+      instructions: state.instructions || state.special_request,
+      // Quantities
+      qty: state.qty || state.copies,
+    };
+  }, [state]);
+
+  // --- 2. CORE STATES (Updated for Sync) ---
   const [deliveryMode, setDeliveryMode] = useState(null);
   const [isModeError, setIsModeError] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Online");
@@ -450,63 +471,131 @@ const Checkout = () => {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="sticky top-24 bg-slate-950 rounded-[3.5rem] p-10 text-white shadow-[0_20px_50px_rgba(37,99,235,0.15)] relative overflow-hidden">
-            <div className="relative z-10">
-              <h4 className="text-center font-black tracking-[0.3em] text-slate-500 text-[10px] mb-10 uppercase">
-                Order Inventory Summary
-              </h4>
-              <div className="space-y-6">
-                <SummaryRow
-                  label="Service Identity"
-                  value={state.serviceType}
-                />
-                <SummaryRow
-                  label="Unit Count"
-                  value={state.copies || state.qty}
-                />
-                <SummaryRow label="Logistics" value={deliveryMode} />
-                <div className="pt-10 border-t border-white/5 space-y-5">
-                  <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    <span>Net Subtotal</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
+          <div className="sticky top-24 space-y-6">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden font-sans">
+              {/* HEADER */}
+              <div className="bg-[#1e293b] p-6 text-center">
+                 <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm text-white">
+                    <Store size={20} />
+                 </div>
+                 <h3 className="text-white font-bold text-lg tracking-wide">Order Summary</h3>
+                 <p className="text-slate-400 text-xs mt-1">Review your order details</p>
+              </div>
+
+              <div className="p-6 space-y-6">
+                
+                {/* 1. UPLOADED FILES */}
+                {(state?.fileKeys || []).length > 0 && (
+                  <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Uploaded Files ({state.fileKeys.length})
+                    </p>
+                    <div className="space-y-2">
+                      {state.fileKeys.map((file, idx) => (
+                         <div key={idx} className="flex items-center gap-3 bg-white p-2.5 rounded-lg border border-blue-100 shadow-sm"> 
+                            <div className="bg-red-50 text-red-500 p-2 rounded-lg">
+                              <div className="text-[10px] font-bold">PDF</div>
+                            </div>
+                            <div className="overflow-hidden">
+                              <p className="text-xs font-bold text-slate-700 truncate">{file}</p>
+                              <p className="text-[10px] text-slate-400">Ready to print</p>
+                            </div>
+                            <div className="ml-auto text-green-500">
+                              <CheckCircle2 size={14} />
+                            </div>
+                         </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    <span>Logistics Fee</span>
-                    <span>
-                      ₹
-                      {deliveryMode === "Delivery"
-                        ? DELIVERY_CHARGE.toFixed(2)
-                        : "0.00"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-baseline pt-6">
-                    <span className="text-2xl font-black italic tracking-tighter uppercase">
-                      Gross Total
-                    </span>
-                    <span className="text-5xl font-black text-blue-500 tracking-tighter leading-none">
-                      ₹{grandTotal.toFixed(2)}
-                    </span>
+                )}
+
+                {/* 2. SPECIFICATIONS (Dynamic) */}
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Order Specifications
+                  </p>
+                  
+                  <div className="text-sm space-y-3">
+                    <SpecRow label="Service Type" value={normalizedOrder.serviceType} />
+                    
+                    {/* Common Fields */}
+                    {normalizedOrder.qty && (
+                      <SpecRow label="Quantity" value={normalizedOrder.qty} />
+                    )}
+                    {normalizedOrder.pages && <SpecRow label="Total Pages" value={normalizedOrder.pages} />}
+                    
+                    {/* Print Specifics */}
+                    {normalizedOrder.paperSize && <SpecRow label="Paper Size" value={normalizedOrder.paperSize} />}
+                    {normalizedOrder.paperType && <SpecRow label="Paper Type" value={normalizedOrder.paperType} />}
+                    {normalizedOrder.printColor && <SpecRow label="Print Color" value={normalizedOrder.printColor} />}
+                    {normalizedOrder.printSide && <SpecRow label="Sides" value={normalizedOrder.printSide} />}
+                    {normalizedOrder.binding && <SpecRow label="Binding" value={normalizedOrder.binding} />}
+                    {normalizedOrder.cover && <SpecRow label="Binding Cover" value={normalizedOrder.cover} />}
+                    
+                    {/* Business Card Specifics */}
+                    {normalizedOrder.cardType && <SpecRow label="Card Type" value={normalizedOrder.cardType} />}
+                    {normalizedOrder.lamination && <SpecRow label="Lamination" value={normalizedOrder.lamination} />}
+                    {normalizedOrder.corner && <SpecRow label="Corner Style" value={normalizedOrder.corner} />}
+
+                     {/* Instructions */}
+                    {normalizedOrder.instructions && <SpecRow label="Instructions" value={normalizedOrder.instructions} />}
                   </div>
                 </div>
+
+                {/* 3. PICKUP / DELIVERY INFO */}
+                {deliveryMode === "Pickup" && (
+                   <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                      <p className="text-xs font-bold text-orange-800 uppercase tracking-widest mb-3">Pickup Contact</p>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="font-bold text-slate-700">{pickupDetails.name || "Not set"}</span>
+                        <span className="font-mono text-slate-500">{pickupDetails.phone || "--"}</span>
+                      </div>
+                   </div>
+                )}
+
+                <div className="border-t border-dashed border-gray-200 my-4" />
+
+                {/* 4. FINANCIAL BREAKDOWN */}
+                <div className="bg-slate-50 rounded-xl p-5 space-y-3">
+                   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-2">
+                      <Banknote size={14} /> Payment Summary
+                   </p>
+                   <div className="flex justify-between text-sm text-slate-600">
+                      <span>Subtotal</span>
+                      <span className="font-bold">₹{subtotal.toFixed(2)}</span>
+                   </div>
+                   <div className="flex justify-between text-sm text-slate-600">
+                      <span>Shipping Fee</span>
+                      <span className="font-bold">₹{(deliveryMode === "Delivery" ? DELIVERY_CHARGE : 0).toFixed(2)}</span>
+                   </div>
+                   <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between items-center">
+                      <span className="text-base font-bold text-slate-900">Total Amount</span>
+                      <span className="text-2xl font-black text-blue-600">₹{grandTotal.toFixed(2)}</span>
+                   </div>
+                </div>
+
+                {/* CHECKOUT BUTTON */}
                 <button
                   disabled={isSubmitting || isPaymentProcessing}
                   onClick={handlePlaceOrderClick}
-                  className="w-full mt-12 py-7 bg-blue-600 hover:bg-blue-500 text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-600/30 transition-all active:scale-95 flex items-center justify-center gap-4 uppercase tracking-tighter disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isSubmitting || isPaymentProcessing ? (
                     <>
-                    <Loader2 className="animate-spin" />
-                    <span>Processing...</span>
+                      <Loader2 className="animate-spin" size={20} />
+                      <span className="text-sm">Processing...</span>
                     </>
                   ) : (
                     <>
-                      <ShieldCheck size={24} /> Checkout Now
+                      <CheckCircle2 size={20} /> Confirm Order
                     </>
                   )}
                 </button>
+
               </div>
             </div>
-            <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-blue-600/5 rounded-full blur-[100px]" />
+            {/* Decorative Blur */}
+            <div className="absolute top-10 right-10 w-full h-full bg-blue-600/5 rounded-full blur-[80px] -z-10" />
           </div>
         </div>
       </div>
@@ -739,14 +828,10 @@ const InputGroup = ({ label, value, onChange, placeholder, error }) => (
   </div>
 );
 
-const SummaryRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-1 font-bold">
-    <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
-      {label}
-    </span>
-    <span className="text-xs text-slate-400 capitalize truncate max-w-[150px]">
-      {value || "—"}
-    </span>
+const SpecRow = ({ label, value }) => (
+  <div className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 px-2 rounded-lg transition-colors">
+    <span className="text-xs font-semibold text-slate-500">{label}</span>
+    <span className="text-sm font-bold text-slate-800 capitalize text-right">{value}</span>
   </div>
 );
 

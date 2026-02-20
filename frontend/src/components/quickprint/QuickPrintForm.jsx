@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import { PRICING_DATA, calculateItemPrice } from "../../utils/pricingRules";
+import ServiceSummary from "../common/ServiceSummary";
 import toast from "react-hot-toast";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -401,92 +402,16 @@ const QuickPrintForm = () => {
 
         {/* SIDEBAR SUMMARY & UPLOAD UI */}
         <div className="lg:col-span-4">
-          <div className="sticky top-24 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-slate-800 text-white p-4 text-center">
-              <h3 className="font-bold text-lg">Item Summary</h3>
-            </div>
-            <div className="p-6">
-              <div className="mb-4 pb-4 border-b border-slate-100 text-center font-semibold text-blue-600 text-sm">
-                {files.length > 0
-                  ? `${files.length} Files Selected`
-                  : "No File Uploaded"}
-              </div>
-
-              <div className="space-y-3">
-                <SummaryRow
-                  label="Total Pages"
-                  value={totalNumPages * settings.copies}
-                />
-                <SummaryRow label="Print Type" value={settings.printType} />
-                <SummaryRow label="Size" value={settings.size.toUpperCase()} />
-                <SummaryRow label="Sides" value={settings.sides} />
-              </div>
-
-              {/* PROGRESS SECTION */}
-              {(uploading || isPaused) && (
-                <div className="mt-6 pt-4 border-t border-gray-100 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
-                        {isPaused ? "Upload Paused" : "Uploading..."}
-                      </span>
-                      <span className="text-[10px] text-gray-400 font-bold">
-                        {eta ? `ETA: ${eta}` : "Calculating..."}
-                      </span>
-                    </div>
-                    <button
-                      onClick={togglePause}
-                      className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition"
-                    >
-                      {isPaused ? (
-                        <Play size={20} fill="currentColor" />
-                      ) : (
-                        <Pause size={20} fill="currentColor" />
-                      )}
-                    </button>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <motion.div
-                      animate={{ width: `${overallProgress}%` }}
-                      className={`h-full ${
-                        isPaused ? "bg-yellow-400" : "bg-blue-600"
-                      }`}
-                    />
-                  </div>
-                  <div className="text-right text-[10px] font-black text-gray-400">
-                    {Math.round(overallProgress)}% COMPLETE
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 pt-4 border-t-2 border-dashed border-slate-200">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold text-gray-600">
-                    Total Price :
-                  </span>
-                  <span className="text-3xl font-bold text-blue-600">
-                    ₹{Number(estimatedPrice).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button
-                  onClick={handleFinalSubmit}
-                  disabled={files.length === 0 || (uploading && !isPaused)}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {uploading && !isPaused ? (
-                    <Loader2 className="animate-spin" />
-                  ) : isPaused ? (
-                    "Resume Upload"
-                  ) : (
-                    "Place Order"
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ServiceSummary
+            serviceType="Quick Print"
+            files={files}
+            settings={settings}
+            price={estimatedPrice}
+            uploadState={{ uploading, isPaused, overallProgress, eta }}
+            onPlaceOrder={handleFinalSubmit}
+            onPauseToggle={togglePause}
+            isDisabled={files.length === 0}
+          />
         </div>
       </div>
     </div>
@@ -516,13 +441,6 @@ const SelectGroup = ({ label, value, onChange, children }) => (
     </select>
   </div>
 );
-const SummaryRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-0.5">
-    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-      {label}
-    </span>
-    <span className="font-bold text-gray-800 text-xs">{value}</span>
-  </div>
-);
+
 
 export default QuickPrintForm;

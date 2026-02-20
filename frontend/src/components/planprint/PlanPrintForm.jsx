@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import { PRICING_DATA, calculateItemPrice } from "../../utils/pricingRules";
+import ServiceSummary from "../common/ServiceSummary";
 import toast from "react-hot-toast";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -353,72 +354,15 @@ const PlanPrintForm = () => {
 
         {/* RIGHT COLUMN: SUMMARY (Matches PHP Style) */}
         <div className="lg:col-span-5">
-          <div className="sticky top-24 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-slate-800 text-white p-4 text-center">
-              <h3 className="font-bold text-lg">Plan Estimate</h3>
-            </div>
-            <div className="p-6 space-y-4 text-left">
-              <div className="mb-4 pb-4 border-b border-slate-100 text-center">
-                <div className="font-semibold text-blue-600 text-sm truncate">
-                  {files.length > 0 ? files[0].name : "Waiting for files..."}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <SummaryRow label="Service" value="Large Format Plan" />
-                <SummaryRow
-                  label="Size"
-                  value={getSizeDisplayName(settings.size)}
-                />
-                <SummaryRow
-                  label="Material"
-                  value={availableMedia[settings.media]?.name}
-                />
-                <SummaryRow
-                  label="Rate per Sheet"
-                  value={`₹${Number(
-                    availableMedia[settings.media]?.single || 0
-                  ).toFixed(2)}`}
-                />
-
-                {/* PHP Calculation Match */}
-                <div className="flex justify-between pt-2 border-t border-gray-100 font-bold items-center">
-                  <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                    Total Sheets
-                  </span>
-                  <span className="text-gray-900 text-xs">
-                    {totalNumPages} pgs x {settings.copies} sets ={" "}
-                    <span className="text-blue-600">
-                      {totalNumPages * settings.copies}
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t-2 border-dashed border-slate-200 flex items-baseline justify-between">
-                <span className="text-lg font-bold text-gray-600">
-                  Total Price :
-                </span>
-                <span className="text-3xl font-bold text-blue-600">
-                  ₹{Number(estimatedPrice).toFixed(2)}
-                </span>
-              </div>
-
-              <button
-                disabled={files.length === 0 || uploading}
-                onClick={handleFinalSubmit}
-                className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg flex justify-center items-center gap-2"
-              >
-                {uploading ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <>
-                    Place Order <ChevronRight size={18} />
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+           <ServiceSummary
+            serviceType="Plan Printing"
+            files={files}
+            settings={{...settings, material: availableMedia[settings.media]?.name }} // Enrich with full material name
+            price={estimatedPrice}
+            uploadState={{ uploading, overallProgress }}
+            onPlaceOrder={handleFinalSubmit}
+            isDisabled={files.length === 0}
+          />
         </div>
       </div>
 
@@ -457,15 +401,6 @@ const SelectGroup = ({ label, value, onChange, children }) => (
   </div>
 );
 
-const SummaryRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-0.5">
-    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-      {label}
-    </span>
-    <span className="font-bold text-gray-900 text-xs text-right truncate max-w-[200px]">
-      {value || "—"}
-    </span>
-  </div>
-);
+
 
 export default PlanPrintForm;

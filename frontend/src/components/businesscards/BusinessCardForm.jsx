@@ -11,6 +11,8 @@ import { useFileUpload } from "../../hooks/useFileUpload";
 import { PRICING_DATA, calculateItemPrice } from "../../utils/pricingRules";
 import toast from "react-hot-toast";
 
+import ServiceSummary from "../common/ServiceSummary";
+
 const BusinessCardForm = () => {
   const navigate = useNavigate();
   const { uploadFile, pauseRef } = useFileUpload();
@@ -94,9 +96,11 @@ const BusinessCardForm = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4">
         {/* LEFT COLUMN: Preview & Info */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-8 space-y-6">
+          
+           {/* Preview Section */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="aspect-[16/10] bg-gray-100 rounded-lg overflow-hidden relative group border border-gray-100">
+            <div className="aspect-[16/6] bg-gray-100 rounded-lg overflow-hidden relative group border border-gray-100">
               {imagePreview ? (
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               ) : file ? (
@@ -109,18 +113,15 @@ const BusinessCardForm = () => {
               )}
               <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf,image/*" />
             </div>
+            <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <h2 className="font-bold text-base text-blue-900 mb-1">Premium Business Cards</h2>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                Professional cards printed on premium stocks. Choose from metallic or art papers with custom finishing.
+                </p>
+            </div>
           </div>
+          
 
-          <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-            <h2 className="font-bold text-lg text-blue-900 mb-2">Premium Business Cards</h2>
-            <p className="text-sm text-blue-800 leading-relaxed">
-              Professional cards printed on premium stocks. Choose from metallic or art papers with custom finishing.
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Configuration */}
-        <div className="lg:col-span-7">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="p-6 space-y-8 text-left">
               
@@ -193,23 +194,20 @@ const BusinessCardForm = () => {
               </div>
 
             </div>
-
-            {/* PHP Style Summary Bar */}
-            <div className="bg-slate-50 p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-left">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Estimated Price</p>
-                <p className="text-3xl font-black text-blue-600">₹{Number(estimatedPrice).toFixed(2)}</p>
-                <p className="text-[10px] text-slate-400">Incl. GST (18%)</p>
-              </div>
-              <button 
-                onClick={handleFinalSubmit}
-                disabled={!file || uploading}
-                className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-12 rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
-                {uploading ? <Loader2 className="animate-spin" /> : "Place Order"}
-              </button>
-            </div>
-
           </div>
+        </div>
+
+        {/* RIGHT COLUMN: Service Summary */}
+        <div className="lg:col-span-4">
+            <ServiceSummary
+                serviceType="Business Cards"
+                files={file ? [file] : []}
+                settings={settings}
+                price={estimatedPrice}
+                uploadState={{ uploading, overallProgress }}
+                onPlaceOrder={handleFinalSubmit}
+                isDisabled={!file}
+            />
         </div>
       </div>
     </div>
